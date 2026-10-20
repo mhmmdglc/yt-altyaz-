@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>YT Altyazı</title>
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎬</text></svg>" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-left">
+      <a href="#/" class="brand"><span class="logo">🎬</span><span>YT <strong>Altyazı</strong></span></a>
+      <button id="drawerBtn" class="btn btn-ghost hidden" aria-expanded="false" data-i18n="nav.videos" data-i18n-title="nav.videosTitle"></button>
+    </div>
+    <div class="actions">
+      <button id="settingsBtn" class="btn btn-ghost btn-icon" data-i18n-title="nav.settings" data-i18n-aria="nav.settings">⚙</button>
+      <button id="newBtn" class="btn btn-primary" data-i18n="nav.new"></button>
+    </div>
+  </header>
+  <div id="drawerBackdrop" class="drawer-backdrop hidden"></div>
+
+  <main>
+    <section id="empty" class="empty hidden">
+      <div class="empty-card">
+        <div class="empty-emoji">🎞️</div>
+        <h1 data-i18n="empty.title"></h1>
+        <p data-i18n-html="empty.text.html"></p>
+        <button id="emptyNewBtn" class="btn btn-primary btn-lg" data-i18n="nav.new"></button>
+      </div>
+    </section>
+
+    <section id="home" class="home hidden">
+      <div class="home-head">
+        <div>
+          <h1 data-i18n="home.title"></h1>
+          <p id="homeStats" class="muted"></p>
+        </div>
+        <input id="searchInput" class="input search" type="search" data-i18n-placeholder="home.search" spellcheck="false" />
+      </div>
+      <div id="videoGrid" class="video-grid"></div>
+    </section>
+
+    <section id="workspace" class="workspace hidden">
+      <aside class="sidebar">
+        <div class="sidebar-head">
+          <h2 data-i18n="home.title"></h2>
+          <span id="projCount" class="badge">0</span>
+        </div>
+        <a href="#/" id="drawerHome" class="drawer-home" data-i18n="home.all"></a>
+        <ul id="projectList" class="project-list"></ul>
+      </aside>
+
+      <div class="pane video-pane">
+        <div class="video-frame">
+          <video id="video" controls playsinline preload="metadata"></video>
+        </div>
+        <div class="video-meta">
+          <div class="video-meta-row">
+            <h2 id="videoTitle">—</h2>
+            <div class="video-actions">
+              <button id="hideVideoBtn" class="btn btn-sm" data-i18n="video.hide" data-i18n-title="video.hideTitle"></button>
+              <button id="deleteBtn" class="btn btn-danger" data-i18n="video.delete" data-i18n-title="video.deleteTitle"></button>
+            </div>
+          </div>
+          <div class="video-meta-row">
+            <p id="videoStats"></p>
+            <div class="seg speed-seg" role="group" data-i18n-aria="video.speed">
+              <button data-rate="0.75">0.75×</button>
+              <button data-rate="1">1×</button>
+              <button data-rate="1.25">1.25×</button>
+              <button data-rate="1.5">1.5×</button>
+            </div>
+          </div>
+        </div>
+        <div class="video-hint">
+          <span><kbd>Space</kbd> <span data-i18n="hint.space"></span></span>
+          <span><kbd>←</kbd><kbd>→</kbd> <span data-i18n="hint.arrows"></span></span>
+          <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="hint.updown"></span></span>
+          <span><kbd>V</kbd> <span data-i18n="hint.v"></span></span>
+          <span data-i18n="hint.click"></span>
+        </div>
+      </div>
+
+      <div class="pane subs-pane">
+        <div class="subs-head">
+          <h2 data-i18n="subs.title"></h2>
+          <label class="switch" data-i18n-title="subs.showTrTitle">
+            <input type="checkbox" id="trToggle" checked />
+            <span class="switch-track"></span>
+            <span data-i18n="subs.showTr"></span>
+          </label>
+          <label class="switch" data-i18n-title="subs.colorsTitle">
+            <input type="checkbox" id="colorToggle" checked />
+            <span class="switch-track"></span>
+            <span data-i18n="subs.colors"></span>
+          </label>
+          <span class="head-spacer"></span>
+          <span id="subCount" class="badge"></span>
+        </div>
+        <div id="miniPlayer" class="mini-player">
+          <div class="mp-row">
+            <strong id="mpTitle" class="mp-title"></strong>
+            <button id="mpShowVideo" class="btn btn-sm" data-i18n="mini.showVideo" data-i18n-title="mini.showVideoTitle"></button>
+          </div>
+          <div class="mp-row">
+            <button id="mpPlay" class="btn btn-sm mp-play" data-i18n-aria="mini.play">▶</button>
+            <input id="mpSeek" class="mp-seek" type="range" min="0" max="1000" value="0" data-i18n-aria="mini.seek" />
+            <span id="mpTime" class="mp-time">0:00 / 0:00</span>
+            <div class="seg speed-seg" role="group" data-i18n-aria="video.speed">
+              <button data-rate="0.75">0.75×</button>
+              <button data-rate="1">1×</button>
+              <button data-rate="1.25">1.25×</button>
+              <button data-rate="1.5">1.5×</button>
+            </div>
+          </div>
+        </div>
+        <div class="subs-tools">
+          <label class="auto-mode-toggle" data-i18n-title="tools.autoTitle">
+            <input type="checkbox" id="autoModeToggle" checked />
+            <span data-i18n="tools.auto"></span>
+          </label>
+          <input id="subSearch" class="input input-sm" type="search" data-i18n-placeholder="tools.search" spellcheck="false" />
+          <button id="followBtn" class="btn btn-sm hidden" data-i18n="tools.follow" data-i18n-title="tools.followTitle"></button>
+        </div>
+        <div id="trBar" class="tr-bar hidden">
+          <span id="trBarText"></span>
+          <button id="trBarBtn" class="btn btn-sm hidden"></button>
+          <div class="tr-progress hidden"><div id="trProgressBar"></div></div>
+        </div>
+        <div id="subList" class="sub-list"></div>
+      </div>
+    </section>
+  </main>
+
+  <div id="modal" class="overlay hidden">
+    <div class="modal">
+      <button id="modalClose" class="modal-x" data-i18n-aria="common.close">×</button>
+      <h2 data-i18n="modal.title"></h2>
+      <p class="muted" data-i18n="modal.text"></p>
+      <input id="urlInput" class="input" type="url" data-i18n-placeholder="modal.placeholder" spellcheck="false" />
+      <div id="progress" class="progress hidden">
+        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        <p id="progressText"></p>
+        <p class="muted small" data-i18n="modal.hint"></p>
+      </div>
+      <div class="modal-actions">
+        <button id="cancelBtn" class="btn" data-i18n="common.close"></button>
+        <button id="goBtn" class="btn btn-primary" data-i18n="modal.go"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="settings" class="overlay hidden">
+    <div class="modal">
+      <button id="settingsClose" class="modal-x" data-i18n-aria="common.close">×</button>
+      <h2 data-i18n="settings.title"></h2>
+      <p id="settingsIntro" class="muted hidden" data-i18n="settings.firstRun"></p>
+      <label class="field">
+        <span data-i18n="settings.ui"></span>
+        <select id="uiLangSelect" class="select"></select>
+      </label>
+      <label class="field">
+        <span data-i18n="settings.target"></span>
+        <select id="targetLangSelect" class="select"></select>
+        <small class="muted" data-i18n="settings.targetHint"></small>
+      </label>
+      <div class="field">
+        <span data-i18n="settings.status"></span>
+        <ul class="status-list">
+          <li id="stWhisper"></li>
+          <li id="stTranslator"></li>
+        </ul>
+      </div>
+      <div class="modal-actions">
+        <button id="settingsDone" class="btn btn-primary" data-i18n="settings.done"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="confirm" class="overlay hidden">
+    <div class="modal modal-sm" role="alertdialog" aria-labelledby="confirmTitle">
+      <h2 id="confirmTitle" data-i18n="confirm.title"></h2>
+      <p id="confirmText" class="muted"></p>
+      <div class="modal-actions">
+        <button id="confirmNo" class="btn" data-i18n="confirm.no"></button>
+        <button id="confirmYes" class="btn btn-danger-solid" data-i18n="confirm.yes"></button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
