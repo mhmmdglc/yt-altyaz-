@@ -16,7 +16,7 @@
         "doctor": "node scripts/doctor.mjs",
         "translator": "node scripts/translator.mjs",
         "regroup": "node scripts/regroup.mjs",
-        "test": "node --test test/"
+        "test": "node --test"
     },
     "dependencies": {
         "express": "^4.21.2"
