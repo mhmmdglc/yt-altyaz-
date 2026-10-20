@@ -1,0 +1,210 @@
+<div align="center">
+
+# 🎬 YT Altyazı
+
+**Learn English from real videos, with subtitles that never cut a sentence in half, translation into your own language, and tools for shadowing. All of it runs on your computer.**
+
+[![CI](https://github.com/mhmmdglc/yt-altyaz-/actions/workflows/ci.yml/badge.svg)](https://github.com/mhmmdglc/yt-altyaz-/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+![Node 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)
+![Runs locally](https://img.shields.io/badge/runs-100%25%20locally-6366f1.svg)
+
+[English](README.md) · [Türkçe](README.tr.md)
+
+![YT Altyazı: the video on the left, English subtitles with colour-matched translations on the right, and the meaning of a clicked word](docs/img/workspace.png)
+
+</div>
+
+## What is it?
+
+Paste a link to an English video (YouTube or any site [yt-dlp](https://github.com/yt-dlp/yt-dlp) supports). The app downloads it, transcribes it with [Whisper](https://github.com/ggml-org/whisper.cpp), arranges the speech into **cards that never split a sentence**, and translates each card into your language with a local AI model.
+
+Then you study with it: read along while you watch, click a word to see its meaning, and repeat a sentence again and again until you can say it yourself (*shadowing*).
+
+There is **no account, no cloud service and no API key**. The videos, the subtitles and your progress stay on your computer.
+
+It is made for people who learn English by watching: talks, lectures, interviews, podcasts on video, vlogs, series you have the right to download.
+
+## Highlights
+
+- 🧩 **Sentence-accurate cards.** A card holds one or a few *whole* sentences, never half of one. Start and end times are snapped to the real pauses in the audio, so the first word is not clipped and the next sentence does not leak in. ([how](docs/SUBTITLE-CARDS.md))
+- 🌍 **Translation into 37 languages**, made on your computer by [HY-MT1.5](https://huggingface.co/tencent/HY-MT1.5-1.8B). Each English sentence and its translation share one colour, so you always see what matches what.
+- 👆 **Click any word** to see its meaning in your language.
+- 🔁 **Shadowing mode.** Press 🔁 on a card: it plays the sentence, waits one second and plays it again, until you stop it.
+- 📖 **Text-only mode** (`V`): hide the video and work with the text; a small player bar keeps the audio under control.
+- ⏯ Resume where you stopped, 0.75×–1.5× speed, search, keyboard shortcuts.
+- 🔒 **Private and offline** after the one-time model download.
+- 🗣 Interface in **English** and **Türkçe** (adding a language is one small file).
+
+<table>
+<tr>
+<td width="50%"><img src="docs/img/shadowing.png" alt="Shadowing: the active card is repeated until you stop it"/><br/><sub><b>Shadowing:</b> the active card repeats until you press ⏹.</sub></td>
+<td width="50%"><img src="docs/img/text-mode.png" alt="Text-only mode with a small player bar"/><br/><sub><b>Text-only mode:</b> read and listen without the video.</sub></td>
+</tr>
+</table>
+
+## How it compares
+
+Many good tools exist for learning from video. They make different trade-offs, and which one fits depends on what you need.
+
+| | **YT Altyazı** | Browser extensions<br/><sub>e.g. [Language Reactor](https://www.languagereactor.com), [Migaku](https://migaku.com)</sub> | Subscription platforms<br/><sub>e.g. FluentU, Yabla, LingQ</sub> | Do it yourself<br/><sub>yt-dlp + Whisper + a player</sub> |
+|---|---|---|---|---|
+| **Cost** | Free, open source (MIT) | Free tiers plus paid plans | Subscription | Free |
+| **Account** | None | Usually | Yes | None |
+| **Where your data goes** | Nowhere: everything runs locally | Page and translation services in the cloud | Their servers | Local |
+| **Content** | Any video you can download | Whatever plays in your browser, including streaming services | Their curated library | Anything |
+| **Subtitle lines** | Rebuilt into whole-sentence cards with audio-accurate timing | The subtitle lines the site provides | Curated by the service | You build them |
+| **Translation** | Local AI model, 37 languages | Cloud translation services | Included for their content | You build it |
+| **Word lookup** | Yes, translated on your computer | Yes | Yes | No |
+| **Shadowing loop** | Built in | Varies | Varies | Player scripts |
+| **Flashcards / spaced repetition** | **No** | Yes (e.g. Migaku, with Anki export) | Yes, in some | No |
+| **Setup** | Command line + about 1.5–3.5 GB of models | Install an extension | None | A lot |
+
+*Based on the products' public descriptions in October 2026; they change, so check their sites for current details.*
+
+**Choose YT Altyazı if** you care about privacy or want it all offline, you want to study from videos *you* choose (including your own downloads), you practise shadowing, or you want something free that you can inspect and change.
+
+**Choose something else if** you mainly watch **Netflix or other streaming services** (this app only works with videos it can download), you need **flashcards and spaced repetition**, your target language is **not English**, you want a **curated course**, or you do not want to use a command line.
+
+## Quick start
+
+You need [Node.js 20+](https://nodejs.org) and a few command-line tools. On **macOS** (Apple Silicon recommended):
+
+```bash
+brew install node ffmpeg yt-dlp whisper-cpp llama.cpp   # one-time tools
+
+git clone https://github.com/mhmmdglc/yt-altyaz-.git yt-altyazi
+cd yt-altyazi
+npm install
+npm run setup      # checks your tools and downloads the models (you choose which)
+npm start          # starts the app and opens it in your browser
+```
+
+That is all. The first time, the app asks which language you want your translations in.
+
+> **Linux and Windows:** the code is written to be portable and the automated tests run on all three systems, but the whole pipeline has so far only been tried on macOS. Instructions and known gaps are in [docs/INSTALL.md](docs/INSTALL.md). Reports and fixes are very welcome.
+
+`npm run doctor` shows what is installed and what is missing at any time.
+
+### What gets downloaded
+
+| What | Size | When | Where |
+|---|---|---|---|
+| Whisper model (speech → text) | 142 MB – 1.5 GB (you choose) | `npm run setup` | `models/` in the project |
+| HY-MT translation model (optional) | 1.9 GB | `npm run setup`, only if you say yes | `~/models/HY-MT1.5-1.8B/` (shared, outside the project) |
+
+Both downloads are checksum-verified and resume if interrupted.
+
+> ⚠️ **Translation model license:** HY-MT is released under the *Tencent HY Community License*, which **does not apply in the European Union, the United Kingdom and South Korea**. Read [docs/TRANSLATION.md](docs/TRANSLATION.md#license) before downloading it. Without it, everything else (downloading, transcription, cards, word-by-word reading, shadowing) still works; you simply get English-only subtitles.
+
+## How to use it
+
+### 1. Add a video
+
+Press **＋ New video**, paste the link and press **Transcribe**. You see the progress (download → audio → transcription → cards) and can close the window: the video opens by itself when it is ready, and the translation continues in the background. Transcribing a 15-minute video takes about 2 minutes on an Apple-silicon Mac.
+
+<img src="docs/img/new-video.png" alt="The New video dialog with a progress bar" width="560"/>
+
+### 2. Read, listen and click
+
+Click a card to jump to it. The active card is highlighted and the list follows the video. Under every English card is its translation; when a card has several sentences, each sentence and its translation share a colour. **Click any English word** to see what it means.
+
+<img src="docs/img/workspace.png" alt="Reading with colour-matched sentences and a word meaning popup" width="760"/>
+
+Word meanings are translated on their own, without the sentence around them, so for words with several senses you get one of them: it is a quick hint, not a dictionary.
+
+### 3. Shadow a sentence
+
+Turn **Auto-continue** off, then press 🔁 on a card. The sentence plays, the app waits one second, and plays it again, over and over, until you press ⏹. Speak along, then try without listening. Lower the speed if the speaker is fast.
+
+### 4. Work with text only
+
+Press `V` (or **🙈 Hide**) to hide the video. The panel gets wider and a small player bar appears; the audio keeps playing.
+
+### 5. Choose your languages
+
+**⚙ Settings** sets the interface language and the language subtitles are translated into. Change it later and each video offers to translate itself into the new language.
+
+<img src="docs/img/settings.png" alt="The settings dialog" width="560"/>
+
+### Keyboard shortcuts
+
+| Key | Action |
+|---|---|
+| `Space` | play / pause |
+| `←` / `→` | 5 seconds back / forward |
+| `↑` / `↓` | previous / next card |
+| `V` | hide / show the video |
+| `Esc` | close a popup, the video list or a dialog |
+
+More detail: [docs/USAGE.md](docs/USAGE.md).
+
+## How it works
+
+```
+link ──yt-dlp──► video ──ffmpeg──► 16 kHz audio ──whisper.cpp──► words with timestamps
+                                         │                              │
+                                  silence detection              words → sentences
+                                         └──────────► times snapped to silences
+                                                              │
+                                              sentences → cards (never split)
+                                                              │
+                                  HY-MT (llama.cpp) translates every sentence → your language
+```
+
+Whisper's own subtitle segments often end in the middle of a sentence, and translating half a sentence gives bad results. So the app asks Whisper for the time of **every word**, finds the sentences itself, and uses the **silences in the audio** to decide exactly where a card starts and ends. Details and tuning: [docs/SUBTITLE-CARDS.md](docs/SUBTITLE-CARDS.md) · [docs/TRANSLATION.md](docs/TRANSLATION.md) · [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## FAQ
+
+**Is it really free?** Yes. The code is MIT-licensed and the tools and models it uses are free to download (check their licenses, especially the translation model's: [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)).
+
+**Does it work offline?** After the models are downloaded, yes, except for downloading the videos you ask for. Videos you have already added work completely offline.
+
+**Which languages?** The videos must be in **English** (the speech models are English-only). Subtitles can be translated into 37 languages, including Turkish, Spanish, German, French, Portuguese, Russian, Arabic, Japanese, Korean, Chinese, Hindi and more. The interface itself is available in English and Türkçe.
+
+**How good are the transcription and the translation?** Whisper `medium.en` is very good on clear speech and makes mistakes on heavy accents, music and names. The translation model is small (1.8B parameters) so it is not as strong as the biggest cloud services; it translates each sentence on its own and can miss context. Treat both as study aids, not as authoritative sources, especially for religious, legal or medical content.
+
+**What computer do I need?** An Apple-silicon Mac is the best-tested setup. Other computers work, slower: use a smaller Whisper model (`small.en`) and expect the translation to take longer without a GPU. About 3 GB of RAM is used while translating.
+
+**Can I use Netflix, Disney+ and similar?** No. The app works on video files it can download. Streaming services protect their video.
+
+**Can I add my own video files?** Not from the interface yet; only links. (A pull request for local-file import would be welcome.)
+
+**Where is my data?** In the `data/` folder of the project. Copy it to back it up; delete a video in the app (🗑) to remove it.
+
+**Does it send anything anywhere?** No. The app listens on `127.0.0.1` only. Network access is used to download the models and the videos you ask for, and to show YouTube thumbnails on the home screen.
+
+## Known limitations and ideas
+
+- English-only source language; no flashcards or spaced repetition; links only (no local file import yet).
+- Linux and Windows are untested end-to-end.
+- Very long sentences (a speaker chaining 30 seconds with commas) stay on one long card by design.
+- Ideas: local-file import, Anki export, more interface languages, other translation backends. See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Privacy and responsible use
+
+- Nothing is uploaded. The app rejects requests from other web pages and only serves your own computer.
+- Videos are downloaded by yt-dlp. **Respect the terms of the sites you download from and the copyright of the videos.** This tool is meant for personal study; do not redistribute downloaded videos or transcripts.
+- Machine transcription and translation make mistakes.
+
+## Documentation
+
+| | |
+|---|---|
+| [docs/INSTALL.md](docs/INSTALL.md) | Installing on macOS, Linux and Windows; troubleshooting |
+| [docs/USAGE.md](docs/USAGE.md) | Every feature, shortcuts, tips |
+| [docs/TRANSLATION.md](docs/TRANSLATION.md) | The translation model: setup, license, using it from other programs |
+| [docs/SUBTITLE-CARDS.md](docs/SUBTITLE-CARDS.md) | How cards and timings are made, and how to tune them |
+| [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Environment variables, folders, files |
+| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Code layout, data format, HTTP API |
+| [CONTRIBUTING.md](CONTRIBUTING.md) · [SECURITY.md](SECURITY.md) · [CHANGELOG.md](CHANGELOG.md) | Helping out · reporting vulnerabilities · what changed |
+
+## Contributing
+
+Bug reports, fixes, interface translations and testing on Linux and Windows are all very welcome: see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## License
+
+[MIT](LICENSE) for the code in this repository. The models and tools it uses have their own licenses: see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+
+Built on the shoulders of [whisper.cpp](https://github.com/ggml-org/whisper.cpp), [llama.cpp](https://github.com/ggml-org/llama.cpp), [yt-dlp](https://github.com/yt-dlp/yt-dlp), [FFmpeg](https://ffmpeg.org) and [HY-MT](https://huggingface.co/tencent/HY-MT1.5-1.8B). The Gettysburg Address used in the screenshots is in the public domain.
