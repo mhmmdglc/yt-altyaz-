@@ -1,0 +1,9 @@
+node_modules/
+# Your library and downloaded models stay on your computer
+data/
+work/
+models/*
+!models/.gitkeep
+*.log
+.env
+.DS_Store
