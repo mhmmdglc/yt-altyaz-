@@ -8,7 +8,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - **Favorites**: save any sentence (on multi-sentence cards you pick which one); a Favorites page to listen to the original audio, repeat it, jump back to the video, and export a tab-separated file for Anki.
 - **Review** with spaced repetition (a simplified SM-2): listen, say it, reveal the translation, rate *Again / Hard / Good / Easy*; the ⭐ button shows how many sentences are due.
 - **✨ Vary** (optional, Gemini API): the grammar pattern of a sentence, a short explanation in your language, new example sentences at your level with the pattern highlighted, read-aloud and save buttons, and real sentences with the same pattern from your own videos, playable with their original audio.
-- **Word meanings in context** (optional, Gemini): the meaning that fits the sentence, with the dictionary form, part of speech and a usage note; falls back to the local model.
+- **Word meanings in context** (optional, off by default: *Settings → Also use Gemini for word meanings*): the meaning that fits the sentence, with the dictionary form, part of speech and a usage note; falls back to the local model. By default word meanings and translations stay on the local model.
 - **Level** (A2, B1, B2, C1; default B1) in the top bar and in Settings.
 - Settings for the Gemini key (stored locally, never sent to the browser) and model, with a connection test.
 - Per-sentence times in every card (`sentTimes`).

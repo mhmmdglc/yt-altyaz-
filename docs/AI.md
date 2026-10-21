@@ -1,11 +1,10 @@
 # AI features (optional): Gemini
 
-Two features use Google's **Gemini API** when you add an API key:
+With an API key, **✨ Vary** uses Google's **Gemini API**: the grammar pattern of a sentence, a short explanation in your language, and new example sentences in the same pattern at your level, plus real sentences with the same pattern from your own videos.
 
-- **✨ Vary**: the grammar pattern of a sentence, a short explanation in your language, and new example sentences in the same pattern at your level, plus real sentences with the same pattern from your own videos.
-- **Word meanings that fit the sentence**: clicking a word gives its meaning *in this sentence* (with the dictionary form and part of speech), instead of translating the word on its own.
+Everything else stays on your computer: videos are still translated by the local model (HY-MT), and clicked words are still translated by it too.
 
-Without a key everything else works as before: word meanings come from the local translation model, and Vary is off.
+**Optional:** *Settings → Also use Gemini for word meanings* (off by default) asks Gemini for the meaning of a clicked word *in its sentence*, with the dictionary form and part of speech, instead of translating the word on its own. It is more accurate for words with several meanings, but it sends that sentence to Google; if Gemini fails, the local model is used.
 
 ## Add a key
 
@@ -31,7 +30,7 @@ Choose your English level (A2, B1, B2, C1; default B1) in the top bar or in Sett
 | Action | Sent | Not sent |
 |---|---|---|
 | ✨ Vary | the sentence, the sentence before it (for context), your translation language and level, and the examples already shown (when you ask for more) | the video, the audio, other subtitles, your library, your favorites |
-| Click a word | the word, the sentence it is in, your translation language and level | everything else |
+| Click a word (only with *Gemini for word meanings* on) | the word, the sentence it is in, your translation language and level | everything else |
 
 Real examples from your library are found **on your computer**: Gemini only suggests a few search phrases (such as "good at"), the search runs locally.
 

@@ -112,7 +112,7 @@ app.get('/api/settings', async (_req, res) => {
     translator: { installed: translator.modelInstalled(), running: await translator.isUp() },
     whisperModel: findWhisperModel() ? path.basename(findWhisperModel()) : null,
     // The key itself never leaves the server; only its last characters are shown
-    ai: { configured: !!ai.apiKey, source: ai.source, model: ai.model, keyHint: ai.apiKey ? `…${ai.apiKey.slice(-4)}` : null }
+    ai: { configured: !!ai.apiKey, source: ai.source, model: ai.model, keyHint: ai.apiKey ? `…${ai.apiKey.slice(-4)}` : null, wordMeanings: !!s.aiWordMeanings }
   });
 });
 
@@ -132,6 +132,7 @@ app.put('/api/settings', async (req, res) => {
     if (key && !/^[\w.-]{20,200}$/.test(key)) return res.status(400).json({ error: 'This does not look like an API key', code: 'BAD_KEY' });
     patch.geminiApiKey = key || undefined;
   }
+  if ('aiWordMeanings' in body) patch.aiWordMeanings = body.aiWordMeanings === true || undefined;
   if ('geminiModel' in body) {
     const model = String(body.geminiModel ?? '').trim();
     if (model && !/^[\w.-]{3,80}$/.test(model)) return res.status(400).json({ error: 'Invalid model name', code: 'BAD_MODEL' });
@@ -319,7 +320,8 @@ app.post('/api/project/:id/translate', async (req, res) => {
 });
 
 // Meaning of one clicked word: GET /api/word?w=trunks&s=<the sentence>
-// With a Gemini key the meaning is chosen for this sentence; otherwise (or if Gemini fails) the local model translates the word alone.
+// The local model (HY-MT) translates the word. Only if the user turned on "Gemini for word meanings" in Settings
+// is Gemini asked for the meaning in this sentence (falling back to the local model if Gemini fails).
 app.get('/api/word', async (req, res) => {
   const w = String(req.query.w || '').trim();
   const sentence = String(req.query.s || '').trim().slice(0, 500);
@@ -328,9 +330,10 @@ app.get('/api/word', async (req, res) => {
   try {
     const lang = await targetLang();
     const ai = await aiConfig();
-    if (ai.apiKey && sentence) {
+    const settings = await readSettings();
+    if (ai.apiKey && sentence && settings.aiWordMeanings) {
       try {
-        const level = levelOf(await readSettings());
+        const level = levelOf(settings);
         const key = aiCache.keyOf(['word', lang, level, w.toLowerCase(), sentence]);
         const cached = await aiCache.get(key);
         if (cached) return res.json({ ...cached, source: 'gemini' });

@@ -23,6 +23,7 @@ const els = {
   aiKeyRemove: $('#aiKeyRemove'),
   aiTest: $('#aiTest'),
   aiModelInput: $('#aiModelInput'),
+  aiWordsToggle: $('#aiWordsToggle'),
   drawerBtn: $('#drawerBtn'),
   drawerBackdrop: $('#drawerBackdrop'),
   sidebar: $('.sidebar'),
@@ -498,7 +499,7 @@ async function showWordPop(wEl, line) {
 
   // The sentence goes along so that (with Gemini) the meaning fits this sentence
   const sentence = wEl.closest('.sent')?.textContent || '';
-  const key = `${settings.targetLang}:${word.toLowerCase()}:${settings.ai?.configured ? sentence : ''}`;
+  const key = `${settings.targetLang}:${word.toLowerCase()}:${settings.ai?.configured && settings.ai?.wordMeanings ? sentence : ''}`;
   let info = wordCache.get(key);
   if (!info) {
     fill([span('wp-word', word), span('wp-tr wp-wait', '…')]);
@@ -875,6 +876,8 @@ function fillAI() {
   els.aiKeyRemove.classList.toggle('hidden', ai.source !== 'settings');
   els.aiTest.disabled = !ai.configured;
   els.aiModelInput.value = ai.model || '';
+  els.aiWordsToggle.checked = !!ai.wordMeanings;
+  els.aiWordsToggle.disabled = !ai.configured;
   fillLevels();
 }
 
@@ -904,6 +907,9 @@ els.aiKeySave.addEventListener('click', async () => {
 });
 els.aiKeyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.aiKeySave.click(); });
 els.aiKeyRemove.addEventListener('click', async () => { if (await saveSetting({ geminiApiKey: '' })) wordCache.clear(); });
+els.aiWordsToggle.addEventListener('change', async () => {
+  if (await saveSetting({ aiWordMeanings: els.aiWordsToggle.checked })) wordCache.clear();
+});
 els.aiModelInput.addEventListener('change', () => saveSetting({ geminiModel: els.aiModelInput.value.trim() }));
 els.aiTest.addEventListener('click', async () => {
   els.aiTest.disabled = true;

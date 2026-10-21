@@ -22,7 +22,7 @@ Each card holds one or a few **whole sentences**; a sentence is never split acro
 
 ## Click a word
 
-Click any English word and its meaning in your language appears under it. Without a Gemini key the word is translated on its own by the local model, so for words with several meanings it shows one of them; contractions are expanded first (`don't` → `do not`). With a Gemini key the meaning fits the sentence, and you also see the dictionary form, the part of speech and sometimes a short usage note. Click elsewhere or press `Esc` to close it.
+Click any English word and its meaning in your language appears under it. Without a Gemini key the word is translated on its own by the local model, so for words with several meanings it shows one of them; contractions are expanded first (`don't` → `do not`). If you turn on *Settings → Also use Gemini for word meanings* (needs a Gemini key, off by default), the meaning fits the sentence and you also see the dictionary form, the part of speech and sometimes a short usage note. Click elsewhere or press `Esc` to close it.
 
 ## Shadowing (repeat after the speaker)
 

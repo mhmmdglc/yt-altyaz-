@@ -29,7 +29,7 @@ Sonra onunla çalışırsın: izlerken okursun, bir kelimeye tıklayıp anlamın
 
 - 🧩 **Cümle bölünmeyen kartlar.** Bir kart bir ya da birkaç *tam* cümle içerir, hiçbir cümlenin yarısını değil. Başlangıç ve bitişler sesteki gerçek duraklamalara oturtulur: ilk kelime kesilmez, sonraki cümle araya sızmaz. ([nasıl](docs/SUBTITLE-CARDS.md))
 - 🌍 **37 dile çeviri**, bilgisayarında [HY-MT1.5](https://huggingface.co/tencent/HY-MT1.5-1.8B) ile. Her İngilizce cümle ile çevirisi aynı renkte görünür, neyin neyle eşleştiği hep belli.
-- 👆 **Herhangi bir kelimeye tıkla**, anlamını kendi dilinde gör (opsiyonel Gemini anahtarıyla: *o cümleye* uyan anlamı).
+- 👆 **Herhangi bir kelimeye tıkla**, anlamını kendi dilinde gör; bilgisayarında çevrilir (istersen Gemini ile, *o cümleye* uyan anlamı).
 - 🔁 **Shadowing modu.** Bir kartta 🔁'ye bas: cümle çalar, 1 sn bekler, sen durdurana kadar tekrar çalar.
 - ⭐ **Favoriler ve tekrar.** İstediğin cümleyi kaydet, aralıklı tekrarla çalış: dinle, söyle, çeviriyi aç, kendini değerlendir. Anki'ye aktarabilirsin.
 - ✨ **Çeşitle** *(opsiyonel, Gemini)*: cümlenin gramer kalıbını bulur, kendi dilinde açıklar, seviyene göre (A2–C1) aynı kalıpla yeni örnek cümleler yazar ve **diğer videolarından aynı kalıbı kullanan gerçek cümleleri** orijinal sesiyle gösterir.
@@ -57,7 +57,7 @@ Videodan öğrenmek için pek çok iyi araç var. Hepsi farklı tercihler yapıy
 | **İçerik** | İndirebildiğin her video | Tarayıcında oynayan her şey, yayın servisleri dahil | Kendi seçili kütüphaneleri | Her şey |
 | **Altyazı satırları** | Ses doğruluğunda zamanlı, tam cümle kartlarına yeniden kurulur | Sitenin verdiği altyazı satırları | Servisin hazırladığı altyazılar | Sen kurarsın |
 | **Çeviri** | Yerel yapay zekâ, 37 dil | Bulut çeviri servisleri | Kendi içerikleri için dahil | Sen kurarsın |
-| **Kelime anlamı** | Var; opsiyonel Gemini anahtarıyla cümleye uygun | Var | Var | Yok |
+| **Kelime anlamı** | Var, bilgisayarında (istersen Gemini: cümleye uygun anlam) | Var | Var | Yok |
 | **Gramer kalıbı ve yeni örnekler** | ✨ Çeşitle (opsiyonel Gemini) + kendi videolarından gerçek örnekler | Değişir | Bazılarında ders olarak | Yok |
 | **Shadowing döngüsü** | Hazır | Değişir | Değişir | Oynatıcı betikleri |
 | **Flashcard / aralıklı tekrar** | Favorilerde aralıklı tekrar; Anki için metin aktarımı | Var (ör. Migaku: ekran görüntüsü ve sesli kartlar, Anki'ye aktarım) | Bazılarında var | Yok |
@@ -199,9 +199,9 @@ Whisper'ın kendi altyazı parçaları çoğu zaman cümlenin ortasında biter v
 
 **Verilerim nerede?** Projenin `data/` klasöründe. Yedeklemek için kopyala; bir videoyu silmek için uygulamada 🗑'ye bas.
 
-**Bir yere bir şey gönderiyor mu?** Yapay zekâ özelliklerini açmadıkça hayır. Uygulama yalnızca `127.0.0.1` üzerinde dinler; internet modelleri, istediğin videoları indirmek ve ana ekranda YouTube kapak resimlerini göstermek için kullanılır. Gemini anahtarı eklersen yalnızca ✨ Çeşitle dediğin cümle ya da tıkladığın kelimenin cümlesi Google'ın Gemini API'sine gider. Gemini'nin ücretsiz katmanında Google gönderdiklerini ürünlerini geliştirmek için kullanabilir ([docs/AI.md](docs/AI.md)).
+**Bir yere bir şey gönderiyor mu?** Yapay zekâ özelliklerini açmadıkça hayır. Uygulama yalnızca `127.0.0.1` üzerinde dinler; internet modelleri, istediğin videoları indirmek ve ana ekranda YouTube kapak resimlerini göstermek için kullanılır. Gemini anahtarı eklersen yalnızca ✨ Çeşitle dediğin cümle Google'ın Gemini API'sine gider (ve yalnızca o seçeneği açarsan, tıkladığın kelimenin cümlesi). Gemini'nin ücretsiz katmanında Google gönderdiklerini ürünlerini geliştirmek için kullanabilir ([docs/AI.md](docs/AI.md)).
 
-**Gemini anahtarı şart mı?** Hayır. ✨ Çeşitle dışındaki her şey anahtarsız çalışır; kelime anlamları o zaman yerel modelden gelir.
+**Gemini anahtarı şart mı?** Hayır. ✨ Çeşitle dışındaki her şey anahtarsız çalışır. Ayarlarda *kelime anlamında Gemini* seçeneğini açmadıkça çeviri ve kelime anlamları hep yerel modelden gelir.
 
 ## Bilinen sınırlar ve fikirler
 

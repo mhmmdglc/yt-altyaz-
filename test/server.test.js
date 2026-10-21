@@ -199,10 +199,17 @@ test('Vary: needs a key, returns examples and real library matches, and caches t
   assert.match(geminiCalls[1].body.contents[0].parts[0].text, /Do not repeat any of these sentences: "Example 1 good at it\."/);
 });
 
-test('word meaning uses the sentence when a key is set, and reports quota errors', async () => {
+test('word meanings stay on the local model by default; Gemini only when turned on', async () => {
   const srv = await startServer();
   await request(srv.port, 'PUT', '/api/settings', { body: { targetLang: 'tr', geminiApiKey: KEY } });
   geminiReply = () => ({ status: 200, obj: { lemma: 'trunk', pos: 'isim', meaning: 'hortum', note: '' } });
+  geminiCalls.length = 0;
+  const local = await request(srv.port, 'GET', `/api/word?w=trunks&s=${encodeURIComponent('Elephants have long trunks.')}`);
+  assert.equal(geminiCalls.length, 0, 'a key alone does not send words to Gemini');
+  assert.equal(local.json.code, 'TRANSLATOR_FAILED', 'the local model is used (and is not installed in the test)');
+  assert.equal((await request(srv.port, 'GET', '/api/settings')).json.ai.wordMeanings, false);
+
+  await request(srv.port, 'PUT', '/api/settings', { body: { aiWordMeanings: true } });
   const r = await request(srv.port, 'GET', `/api/word?w=trunks&s=${encodeURIComponent('Elephants have long trunks.')}`);
   assert.equal(r.json.tr, 'hortum');
   assert.equal(r.json.source, 'gemini');

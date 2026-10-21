@@ -29,7 +29,7 @@ It is made for people who learn English by watching: talks, lectures, interviews
 
 - 🧩 **Sentence-accurate cards.** A card holds one or a few *whole* sentences, never half of one. Start and end times are snapped to the real pauses in the audio, so the first word is not clipped and the next sentence does not leak in. ([how](docs/SUBTITLE-CARDS.md))
 - 🌍 **Translation into 37 languages**, made on your computer by [HY-MT1.5](https://huggingface.co/tencent/HY-MT1.5-1.8B). Each English sentence and its translation share one colour, so you always see what matches what.
-- 👆 **Click any word** to see its meaning in your language (with the optional Gemini key: the meaning that fits *this* sentence).
+- 👆 **Click any word** to see its meaning in your language, translated on your computer (optionally by Gemini, which picks the meaning that fits *this* sentence).
 - 🔁 **Shadowing mode.** Press 🔁 on a card: it plays the sentence, waits one second and plays it again, until you stop it.
 - ⭐ **Favorites and review.** Save any sentence and review your sentences with spaced repetition: listen, say it, reveal the translation, rate yourself. Export them for Anki.
 - ✨ **Vary** *(optional, Gemini)*: finds the grammar pattern of a sentence, explains it in your language and writes new example sentences with the same pattern at your level (A2–C1), and shows **real sentences with the same pattern from your other videos**, playable with their original audio.
@@ -57,7 +57,7 @@ Many good tools exist for learning from video. They make different trade-offs, a
 | **Content** | Any video you can download | Whatever plays in your browser, including streaming services | Their curated library | Anything |
 | **Subtitle lines** | Rebuilt into whole-sentence cards with audio-accurate timing | The subtitle lines the site provides | Curated by the service | You build them |
 | **Translation** | Local AI model, 37 languages | Cloud translation services | Included for their content | You build it |
-| **Word lookup** | Yes; with the optional Gemini key it fits the sentence | Yes | Yes | No |
+| **Word lookup** | Yes, on your computer (optionally Gemini: the meaning that fits the sentence) | Yes | Yes | No |
 | **Grammar patterns and new examples** | ✨ Vary (optional Gemini) + real examples from your own videos | Varies | Lessons, in some | No |
 | **Shadowing loop** | Built in | Varies | Varies | Player scripts |
 | **Flashcards / spaced repetition** | Favorites with spaced-repetition review; text export for Anki | Yes (e.g. Migaku: cards with screenshot and audio, Anki export) | Yes, in some | No |
@@ -197,9 +197,9 @@ Whisper's own subtitle segments often end in the middle of a sentence, and trans
 
 **Where is my data?** In the `data/` folder of the project. Copy it to back it up; delete a video in the app (🗑) to remove it.
 
-**Does it send anything anywhere?** Not unless you turn on the AI features. The app listens on `127.0.0.1` only; network access is used to download the models and the videos you ask for, and to show YouTube thumbnails on the home screen. If you add a Gemini key, the sentence you ✨ Vary, or the sentence of a word you click, is sent to Google's Gemini API, nothing else. On Gemini's free tier Google may use what you send to improve its products ([docs/AI.md](docs/AI.md)).
+**Does it send anything anywhere?** Not unless you turn on the AI features. The app listens on `127.0.0.1` only; network access is used to download the models and the videos you ask for, and to show YouTube thumbnails on the home screen. If you add a Gemini key, the sentence you ✨ Vary is sent to Google's Gemini API (and, only if you turn that option on, the sentence of a word you click), nothing else. On Gemini's free tier Google may use what you send to improve its products ([docs/AI.md](docs/AI.md)).
 
-**Do I need a Gemini key?** No. Everything except ✨ Vary works without it; word meanings then come from the local model.
+**Do I need a Gemini key?** No. Everything except ✨ Vary works without it. Translation and word meanings always use the local model unless you turn on *Gemini for word meanings* in Settings.
 
 ## Known limitations and ideas
 

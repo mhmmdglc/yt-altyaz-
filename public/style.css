@@ -908,6 +908,8 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .ai-row .input-sm { flex: 1; }
 .ai-status { margin: 2px 0; font-weight: 500; font-size: 13px; color: var(--muted); }
 .ai-status.ok { color: var(--ok); }
+.ai-check { cursor: pointer; }
+.ai-check input { accent-color: var(--accent); }
 .ai-box a { color: #a5b4fc; }
 .ai-box a:hover { color: #c7d2fe; }
 #settings .modal { max-height: calc(100vh - 40px); overflow-y: auto; }
