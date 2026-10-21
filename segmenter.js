@@ -145,7 +145,7 @@ function refineBoundary(prev, next, silences) {
 /* ---------- 5) Sentences → cards ---------- */
 
 // words: wordsFromWhisper output, silences: detectSilences output
-// Returns cards: { start, end, text, sents: [sentence, …] }
+// Returns cards: { start, end, text, sents: [sentence, …], sentTimes: [[start, end], …] }
 export function buildCards(words, silences, opts = {}) {
   const cfg = { ...CARD, ...opts };
   const sentences = wordsToSentences(words, silences, cfg);
@@ -174,9 +174,10 @@ export function buildCards(words, silences, opts = {}) {
       sent.end - card.start <= cfg.maxDuration;
     if (fits) {
       card.sents.push(sent.text);
+      card.parts.push(sent);
       card.end = sent.end;
     } else {
-      cards.push({ start: sent.start, end: sent.end, sents: [sent.text] });
+      cards.push({ start: sent.start, end: sent.end, sents: [sent.text], parts: [sent] });
     }
   }
 
@@ -194,10 +195,26 @@ export function buildCards(words, silences, opts = {}) {
     cards[i + 1].start = roomy ? gapEnd - cfg.startPad : mid;
   });
 
-  return cards.map((c) => ({
-    start: +c.start.toFixed(2),
-    end: +c.end.toFixed(2),
-    text: c.sents.join(' '),
-    sents: c.sents
-  }));
+  // Per-sentence times inside each card (for playing or saving one sentence), padded the same way and never overlapping
+  const round = (x) => +x.toFixed(2);
+  return cards.map((c) => {
+    const times = c.parts.map((p) => [p.start, p.end]);
+    times[0][0] = c.start;
+    times[times.length - 1][1] = c.end;
+    for (let k = 0; k < times.length - 1; k++) {
+      const gapStart = c.parts[k].end;
+      const gapEnd = c.parts[k + 1].start;
+      const roomy = gapEnd - gapStart >= cfg.endPad + cfg.startPad;
+      const mid = (gapStart + gapEnd) / 2;
+      times[k][1] = Math.max(times[k][0], roomy ? gapStart + cfg.endPad : mid);
+      times[k + 1][0] = Math.min(times[k + 1][1], roomy ? gapEnd - cfg.startPad : mid);
+    }
+    return {
+      start: round(c.start),
+      end: round(c.end),
+      text: c.sents.join(' '),
+      sents: c.sents,
+      sentTimes: times.map(([a, b]) => [round(a), round(b)])
+    };
+  });
 }

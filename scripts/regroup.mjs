@@ -5,7 +5,8 @@
 //
 //   (default)      reuses data/<id>/words.json when it exists, so Whisper does not run again (seconds)
 //   --whisper      transcribes the video again with word timestamps (about 1-5 min per video) → words.json
-//   --no-translate do not ask the running app to translate afterwards
+//   --no-translate do not ask the running app to translate the cards that are new or changed
+// Translations of cards whose text did not change are kept.
 import { readFile, writeFile, readdir, copyFile, mkdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import path from 'node:path';
@@ -61,16 +62,20 @@ for (const id of ids) {
   const dens = punctuationDensity(data.words);
   if (dens < CARD.minPunctDensity) console.log(`  ⚠ very little punctuation in this recording (${(dens * 100).toFixed(1)} sentence ends per 100 words): sentences are derived from pauses`);
   const before = project.segments.length;
-  project.segments = buildCards(data.words, data.silences);
-  delete project.trLang; // old translations no longer match the new cards
+  // Keep the translation of every card whose text did not change, so only new or changed cards need translating
+  const oldTranslations = new Map(project.segments.filter((c) => c.tr).map((c) => [c.text, { tr: c.tr, trParts: c.trParts }]));
+  project.segments = buildCards(data.words, data.silences).map((c) => ({ ...c, ...(oldTranslations.get(c.text) || {}) }));
+  const kept = project.segments.filter((c) => c.tr).length;
+  if (!kept) delete project.trLang;
   await writeFile(file, JSON.stringify(project, null, 2));
   const multi = project.segments.filter((c) => c.sents.length > 1).length;
-  console.log(`  ${before} → ${project.segments.length} cards (${multi} with several sentences), length ${fmt(project.segments.at(-1)?.end ?? 0)}`);
+  console.log(`  ${before} → ${project.segments.length} cards (${multi} with several sentences), length ${fmt(project.segments.at(-1)?.end ?? 0)}; translations kept for ${kept}`);
+  if (kept === project.segments.length) continue; // nothing left to translate
 
   if (!flags.has('--no-translate')) {
     try {
       const r = await fetch(`${APP}/api/project/${id}/translate`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ force: true })
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({})
       });
       if (!r.ok) throw new Error((await r.json()).error || r.status);
       let st;

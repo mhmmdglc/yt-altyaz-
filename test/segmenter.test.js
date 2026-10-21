@@ -128,6 +128,22 @@ test('a long sentence WITH commas is a real sentence and stays whole', () => {
   assert.equal(pieces.length, 1);
 });
 
+test('every card has per-sentence times that stay inside the card and never overlap', () => {
+  const words = makeWords('A b c d. E f g h. I j k l. M n o p q r s t u v w x y z aa bb cc dd ee ff gg hh. Last one.', { gaps: { 3: 0.5, 7: 0.1 } });
+  const silences = [{ a: words[3].e + 0.02, b: words[3].e + 0.5 }];
+  const cards = buildCards(words, silences);
+  for (const c of cards) {
+    assert.equal(c.sentTimes.length, c.sents.length);
+    assert.equal(c.sentTimes[0][0], c.start);
+    assert.equal(c.sentTimes.at(-1)[1], c.end);
+    for (let k = 0; k < c.sentTimes.length; k++) {
+      const [a, b] = c.sentTimes[k];
+      assert.ok(b > a, `sentence ${k} has a positive length`);
+      if (k) assert.ok(a >= c.sentTimes[k - 1][1] - 1e-9, 'sentences inside a card do not overlap');
+    }
+  }
+});
+
 test('buildCards on empty input returns no cards', () => {
   assert.deepEqual(buildCards([], []), []);
 });
