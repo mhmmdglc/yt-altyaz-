@@ -7,6 +7,16 @@ import { fileURLToPath } from 'node:url';
 export const ROOT = path.dirname(fileURLToPath(import.meta.url));
 export const IS_WINDOWS = process.platform === 'win32';
 
+// Settings from a .env file in the project folder (e.g. GEMINI_API_KEY=…). Variables already set in the environment win.
+const ENV_FILE = path.join(ROOT, '.env');
+if (existsSync(ENV_FILE)) {
+  try {
+    process.loadEnvFile(ENV_FILE);
+  } catch (e) {
+    console.warn(`⚠️  Could not read .env: ${e.message}`);
+  }
+}
+
 // Launchers such as Finder or the Start menu give the app a minimal PATH: add the usual install folders
 if (!IS_WINDOWS) {
   const extra = ['/opt/homebrew/bin', '/usr/local/bin', '/home/linuxbrew/.linuxbrew/bin', path.join(os.homedir(), '.local', 'bin')];
