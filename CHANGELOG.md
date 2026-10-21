@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.2.0] - 2026-10-21
+
+### Added
+- **🎯 Study (speaking practice)**: one sentence becomes a speaking ladder (8–15 steps by level, built by Gemini): you see each step in your language, say it in English, and your recording is transcribed **locally** by Whisper and compared word by word (contractions, case and punctuation ignored). Blurred English with reveal, hints, read-aloud and repeat-until-stopped (shadowing), *I knew it / I didn't*, practise only the missed steps, list or one-by-one mode with keyboard shortcuts.
+- Missed Study steps can be added to Review, where they are asked from your language to English with 🎤.
+- Entry points: 🎯 on a card, *Study this pattern* in Vary, 🎯 on a favorite.
+
+### Changed
+- The Study prompt makes Gemini write the English first and then its translation, which keeps the two sentences equivalent; steps that only differ by a contraction are dropped.
+
 ## [1.1.0] - 2026-10-21
 
 ### Added

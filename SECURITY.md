@@ -10,6 +10,7 @@ YT Altyazı is a **local** application: a web interface served from your own com
 - Only accepts `http`/`https` links for download, passes them to yt-dlp after `--`, and runs tools without a shell.
 - The translation server (`llama-server`) listens on `127.0.0.1` only.
 - Downloads of models are checksum-verified.
+- Microphone recordings (🎯 Study) are sent only to this app on `127.0.0.1`, transcribed by Whisper locally, limited to 10 MB / the first 30 seconds, and deleted right after.
 - A Gemini API key saved in Settings is stored in `data/settings.json` on your computer and is never sent to the browser (only its last four characters are shown). It is sent only to Google's API, in a request header. A key in the project's `.env` file is also plain text on disk; `.env` is ignored by git so it is never committed. An environment variable keeps it off the disk entirely.
 
 ## What it cannot protect against

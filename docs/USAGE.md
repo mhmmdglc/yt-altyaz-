@@ -43,6 +43,18 @@ Press **☆** on a card to save a sentence. On a card with several sentences a s
 - **✨ Vary** works here too.
 - **⬇ Export for Anki** downloads a tab-separated file (English, translation, source). In Anki use *File → Import*; audio is not included.
 
+## 🎯 Study (speaking practice)
+
+Press **🎯** on a card (pick the sentence on a multi-sentence card), **🎯 Study this pattern** in the Vary panel, or **🎯 Study** on a favorite. Needs a Gemini key to build the ladder; your voice is processed only on your computer.
+
+The page shows the sentence (▶ plays its original audio), its pattern, and a ladder of steps (8 at A2, 12 at B1, 14 at B2, 15 at C1): the simplest core, other subjects, negative, question, added details, the full sentence, and a natural extension. Each step shows the sentence **in your language** and the English **blurred**.
+
+- **🎤 Say it**: say the English and press **⏹ Done**. Whisper transcribes it locally and compares it word by word (contractions, case and punctuation do not matter): *✓ Great!* (marked as known), *≈ Almost* with the missing words, or *✗ Not quite* (marked as missed). The browser asks for microphone access the first time.
+- **💡 Hint** shows one to three key words; **👁 Show** (or clicking the blur) reveals the English; **🔊** reads it, **🔁** repeats it until stopped.
+- **✓ I knew it / ✗ I didn't** mark a step. The summary at the bottom lets you **practise only the missed steps** again or **add them to Review** (they are then reviewed from your language to English, with 🎤).
+- **List / One by one**: one by one is keyboard friendly: `M` speak, `Space` show, `L` listen, `1` knew, `2` didn't, `←`/`→` move.
+- **🔄 New set** writes a different ladder; otherwise the same sentence opens the same (cached) ladder.
+
 ## Review (spaced repetition)
 
 **🧠 Review** shows the saved sentences that are due today, one at a time:
@@ -83,6 +95,7 @@ Press **🙈 Hide** (or `V`) to hide the video. The subtitle panel gets wider an
 | `V` | hide / show the video |
 | `Esc` | close a popup, the video list or a dialog |
 | `Space`, `1`–`4` | in Review: reveal, then rate |
+| `M`, `Space`, `L`, `1`/`2`, `←`/`→` | in Study (one by one): speak, show, listen, mark, move |
 
 ## Changing the translation language
 

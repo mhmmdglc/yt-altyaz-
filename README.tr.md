@@ -31,6 +31,7 @@ Sonra onunla çalışırsın: izlerken okursun, bir kelimeye tıklayıp anlamın
 - 🌍 **37 dile çeviri**, bilgisayarında [HY-MT1.5](https://huggingface.co/tencent/HY-MT1.5-1.8B) ile. Her İngilizce cümle ile çevirisi aynı renkte görünür, neyin neyle eşleştiği hep belli.
 - 👆 **Herhangi bir kelimeye tıkla**, anlamını kendi dilinde gör; bilgisayarında çevrilir (istersen Gemini ile, *o cümleye* uyan anlamı).
 - 🔁 **Shadowing modu.** Bir kartta 🔁'ye bas: cümle çalar, 1 sn bekler, sen durdurana kadar tekrar çalar.
+- 🎯 **Konuşarak çalış** *(opsiyonel, Gemini)*: tek bir cümleyi konuşma merdivenine çevirir: en basit çekirdekten ("Gidiyorum.") başlayıp diğer kişiler, olumsuz, soru ve eklenen ayrıntılarla tam cümleye kadar. Her adımı kendi dilinde görürsün, **İngilizcesini söylersin**, sesin **bilgisayarında** (Whisper) kelime kelime kontrol edilir; sonra bulanık İngilizceyi açar, dinler ve tekrarlarsın.
 - ⭐ **Favoriler ve tekrar.** İstediğin cümleyi kaydet, aralıklı tekrarla çalış: dinle, söyle, çeviriyi aç, kendini değerlendir. Anki'ye aktarabilirsin.
 - ✨ **Çeşitle** *(opsiyonel, Gemini)*: cümlenin gramer kalıbını bulur, kendi dilinde açıklar, seviyene göre (A2–C1) aynı kalıpla yeni örnek cümleler yazar ve **diğer videolarından aynı kalıbı kullanan gerçek cümleleri** orijinal sesiyle gösterir.
 - 📖 **Yalnız metin modu** (`V`): videoyu gizle, metinle çalış; küçük oynatıcı çubuğu sesi yönetir.
@@ -58,6 +59,7 @@ Videodan öğrenmek için pek çok iyi araç var. Hepsi farklı tercihler yapıy
 | **Altyazı satırları** | Ses doğruluğunda zamanlı, tam cümle kartlarına yeniden kurulur | Sitenin verdiği altyazı satırları | Servisin hazırladığı altyazılar | Sen kurarsın |
 | **Çeviri** | Yerel yapay zekâ, 37 dil | Bulut çeviri servisleri | Kendi içerikleri için dahil | Sen kurarsın |
 | **Kelime anlamı** | Var, bilgisayarında (istersen Gemini: cümleye uygun anlam) | Var | Var | Yok |
+| **Geri bildirimli konuşma alıştırması** | 🎯 Çalış: söyle, bilgisayarında kelime kelime kontrol edilir | Değişir | Bazılarında | Yok |
 | **Gramer kalıbı ve yeni örnekler** | ✨ Çeşitle (opsiyonel Gemini) + kendi videolarından gerçek örnekler | Değişir | Bazılarında ders olarak | Yok |
 | **Shadowing döngüsü** | Hazır | Değişir | Değişir | Oynatıcı betikleri |
 | **Flashcard / aralıklı tekrar** | Favorilerde aralıklı tekrar; Anki için metin aktarımı | Var (ör. Migaku: ekran görüntüsü ve sesli kartlar, Anki'ye aktarım) | Bazılarında var | Yok |
@@ -151,6 +153,20 @@ Bir kartta ✨'e bas. Cümlenin gramer kalıbı, kendi dilinde kısa bir açıkl
 
 Seviyeni (A2, B1, B2, C1) üst menüden seç. Çeşitle ücretsiz bir Gemini API anahtarı ister: proje klasöründe bir `.env` dosyasına `GEMINI_API_KEY=…` yaz ya da **⚙ Ayarlar**'a yapıştır. Neyin gönderildiği ve ücreti [docs/AI.md](docs/AI.md) içinde (İngilizce).
 
+### 8. Bir cümleyi konuşarak çalış (opsiyonel, Gemini)
+
+Bir kartta 🎯'e bas (ya da Çeşitle'de **🎯 Bu kalıpla çalış**, ya da bir favoride 🎯). O cümleden kurulmuş bir **konuşma merdiveniyle** çalışma ekranı açılır: önce en basit çekirdek, sonra diğer kişiler, olumsuz, soru, eklenen ayrıntılar ve en sonda tam cümle ve biraz ötesi.
+
+Her adımda cümleyi **kendi dilinde** görürsün; İngilizcesi bulanıktır.
+
+1. **🎤 Söyle**'ye bas ve İngilizcesini söyle. Sesin **bilgisayarında** (Whisper) yazıya çevrilip kelime kelime karşılaştırılır: *✓ Harika!*, *≈ Neredeyse. Eksik: is* ya da *✗ Tam olmadı*.
+2. İngilizcesi açılır (ya da **👁 Göster**'e bas; önce birkaç anahtar kelime için **💡 İpucu**). **🔊** sesli okur, **🔁** sen durdurana kadar tekrarlar: shadowing yap.
+3. **✓ Bildim / ✗ Bilemedim** diye işaretle. Sonunda yalnız bilemediklerini tekrar çalışabilir ya da onları **Tekrar**'a ekleyebilirsin; orada da aynı yönde gelirler (kendi dilin → İngilizcesini söyle).
+
+**Liste** ile **Tek tek** arasında geçiş yapabilirsin (tuşlar: `M` söyle, `Space` göster, `L` dinle, `1`/`2` işaretle, `←`/`→` geç). **🔄 Yeni set** farklı bir merdiven yazar.
+
+<img src="docs/img/study-tr.png" alt="Çalış: bulanık İngilizceli konuşma merdiveni, kontrol edilmiş sesli cevap ve ipucu" width="760"/>
+
 ### Klavye kısayolları
 
 | Tuş | İşlev |
@@ -161,6 +177,7 @@ Seviyeni (A2, B1, B2, C1) üst menüden seç. Çeşitle ücretsiz bir Gemini API
 | `V` | videoyu gizle / göster |
 | `Esc` | pencereyi / listeyi kapat |
 | `Space`, `1`–`4` | Tekrar ekranında: çeviriyi aç, sonra *Tekrar / Zor / İyi / Kolay* |
+| `M`, `Space`, `L`, `1`/`2`, `←`/`→` | Çalış ekranında (tek tek): söyle, göster, dinle, işaretle, geç |
 
 Daha fazla ayrıntı: [docs/USAGE.md](docs/USAGE.md) (İngilizce).
 
@@ -199,9 +216,11 @@ Whisper'ın kendi altyazı parçaları çoğu zaman cümlenin ortasında biter v
 
 **Verilerim nerede?** Projenin `data/` klasöründe. Yedeklemek için kopyala; bir videoyu silmek için uygulamada 🗑'ye bas.
 
-**Bir yere bir şey gönderiyor mu?** Yapay zekâ özelliklerini açmadıkça hayır. Uygulama yalnızca `127.0.0.1` üzerinde dinler; internet modelleri, istediğin videoları indirmek ve ana ekranda YouTube kapak resimlerini göstermek için kullanılır. Gemini anahtarı eklersen yalnızca ✨ Çeşitle dediğin cümle Google'ın Gemini API'sine gider (ve yalnızca o seçeneği açarsan, tıkladığın kelimenin cümlesi). Gemini'nin ücretsiz katmanında Google gönderdiklerini ürünlerini geliştirmek için kullanabilir ([docs/AI.md](docs/AI.md)).
+**Bir yere bir şey gönderiyor mu?** Yapay zekâ özelliklerini açmadıkça hayır. Uygulama yalnızca `127.0.0.1` üzerinde dinler; internet modelleri, istediğin videoları indirmek ve ana ekranda YouTube kapak resimlerini göstermek için kullanılır. Gemini anahtarı eklersen yalnızca ✨ Çeşitle ya da 🎯 Çalış dediğin cümle Google'ın Gemini API'sine gider (ve yalnızca o seçeneği açarsan, tıkladığın kelimenin cümlesi). Gemini'nin ücretsiz katmanında Google gönderdiklerini ürünlerini geliştirmek için kullanabilir ([docs/AI.md](docs/AI.md)).
 
-**Gemini anahtarı şart mı?** Hayır. ✨ Çeşitle dışındaki her şey anahtarsız çalışır. Ayarlarda *kelime anlamında Gemini* seçeneğini açmadıkça çeviri ve kelime anlamları hep yerel modelden gelir.
+**Sesim bir yere yükleniyor mu?** Hayır. 🎯 Çalış'ta kaydın bilgisayarındaki Whisper ile yazıya çevrilir ve hemen silinir; merdiveni kurmak için Gemini'ye yalnızca çalıştığın cümle gider. Tarayıcı ilk seferde mikrofon izni ister.
+
+**Gemini anahtarı şart mı?** Hayır. ✨ Çeşitle ve 🎯 Çalış dışındaki her şey anahtarsız çalışır. Ayarlarda *kelime anlamında Gemini* seçeneğini açmadıkça çeviri ve kelime anlamları hep yerel modelden gelir.
 
 ## Bilinen sınırlar ve fikirler
 

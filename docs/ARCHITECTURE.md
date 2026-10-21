@@ -18,7 +18,7 @@ A small Node.js (Express) server plus a plain HTML/CSS/JavaScript interface. No 
 | `library.js` | finds sentences with a pattern in your own library |
 | `store.js` | small JSON file store with a write queue |
 | `exec.js`, `open-browser.js` | run a command; open the default browser |
-| `public/` | `index.html`, `app.js` (main module), `vary.js` (Vary panel), `favorites-view.js` (Favorites and Review pages), `fav-store.js`, `clip.js` (sentence and speech playback), `util.js`, `i18n.js`, `locales.js`, `style.css` |
+| `public/` | `index.html`, `app.js` (main module), `study.js` (🎯 Study page and the 🎤 widget), `recorder.js` (microphone), `speech-match.js` (word-by-word comparison, shared with the tests), `vary.js` (Vary panel), `favorites-view.js` (Favorites and Review pages), `fav-store.js`, `clip.js` (sentence and speech playback), `util.js`, `i18n.js`, `locales.js`, `style.css` |
 | `scripts/` | `setup`, `doctor`, `translator` (CLI), `regroup`, macOS launcher helpers |
 | `test/` | `node:test` tests: segmenter, locales, translator prompts, download, server security/API |
 
@@ -67,13 +67,15 @@ The API is meant for the bundled interface and may change. All responses are JSO
 | `GET` | `/api/word?w=word&s=sentence` | `{ word, tr, expanded?, lemma?, pos?, note?, source: gemini\|local }` meaning in the target language |
 | `POST` | `/api/ai/vary` | `{ text, context?, more? }` → `{ pattern, explanation, examples: [{ en, tr }], library: [...], level }` |
 | `POST` | `/api/ai/test` | checks the Gemini key and model |
+| `POST` | `/api/ai/drill` | `{ text, context?, fresh? }` → `{ pattern, explanation, steps: [{ label, native, en, alternatives, hint }], level }` |
+| `POST` | `/api/speech` | raw audio (webm/opus, mp4…, ≤ 10 MB, first 30 s) → `{ text, silent }`, transcribed locally by Whisper; the recording is deleted |
 | `GET` | `/api/favorites` | `{ items, due }` |
-| `POST` | `/api/favorites` | `{ projectId, cardIndex, sentIndex }` or `{ kind: "example", text, tr, pattern }` |
+| `POST` | `/api/favorites` | `{ projectId, cardIndex, sentIndex }` or `{ kind: "example" \| "drill", text, tr, pattern }` (drill items are reviewed from your language to English) |
 | `DELETE` | `/api/favorites/:id` | remove |
 | `POST` | `/api/favorites/:id/review` | `{ grade: again\|hard\|good\|easy }` → the item with its new schedule |
 | `GET` | `/api/favorites/export.tsv` | tab-separated export for Anki |
 
-Error codes the interface translates: `NO_LANG`, `NO_MODEL`, `NO_WHISPER`, `NO_SPEECH`, `BAD_URL`, `TRANSLATOR_FAILED`, `NOT_FOUND`, `FORBIDDEN`, `BAD_ID`, `INTERNAL`, `NO_AI_KEY`, `AI_KEY_INVALID`, `AI_QUOTA`, `AI_OFFLINE`, `AI_MODEL`, `AI_BLOCKED`, `AI_FAILED`, `BAD_KEY`, `BAD_LEVEL`, `BAD_TEXT`, `BAD_MODEL`, `BAD_GRADE`.
+Error codes the interface translates: `NO_LANG`, `NO_MODEL`, `NO_WHISPER`, `NO_SPEECH`, `BAD_URL`, `TRANSLATOR_FAILED`, `NOT_FOUND`, `FORBIDDEN`, `BAD_ID`, `INTERNAL`, `BAD_AUDIO`, `SPEECH_FAILED`, `NO_AI_KEY`, `AI_KEY_INVALID`, `AI_QUOTA`, `AI_OFFLINE`, `AI_MODEL`, `AI_BLOCKED`, `AI_FAILED`, `BAD_KEY`, `BAD_LEVEL`, `BAD_TEXT`, `BAD_MODEL`, `BAD_GRADE`.
 
 ## Design notes
 

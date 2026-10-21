@@ -31,6 +31,7 @@ It is made for people who learn English by watching: talks, lectures, interviews
 - 🌍 **Translation into 37 languages**, made on your computer by [HY-MT1.5](https://huggingface.co/tencent/HY-MT1.5-1.8B). Each English sentence and its translation share one colour, so you always see what matches what.
 - 👆 **Click any word** to see its meaning in your language, translated on your computer (optionally by Gemini, which picks the meaning that fits *this* sentence).
 - 🔁 **Shadowing mode.** Press 🔁 on a card: it plays the sentence, waits one second and plays it again, until you stop it.
+- 🎯 **Study by speaking** *(optional, Gemini)*: turn one sentence into a speaking ladder, from its simplest core ("I'm going.") through other subjects, negative, question and added details up to the full sentence. You see each step in your language, **say it in English**, and your voice is checked word by word **on your computer** (Whisper); then reveal the blurred English, listen and repeat.
 - ⭐ **Favorites and review.** Save any sentence and review your sentences with spaced repetition: listen, say it, reveal the translation, rate yourself. Export them for Anki.
 - ✨ **Vary** *(optional, Gemini)*: finds the grammar pattern of a sentence, explains it in your language and writes new example sentences with the same pattern at your level (A2–C1), and shows **real sentences with the same pattern from your other videos**, playable with their original audio.
 - 📖 **Text-only mode** (`V`): hide the video and work with the text; a small player bar keeps the audio under control.
@@ -58,6 +59,7 @@ Many good tools exist for learning from video. They make different trade-offs, a
 | **Subtitle lines** | Rebuilt into whole-sentence cards with audio-accurate timing | The subtitle lines the site provides | Curated by the service | You build them |
 | **Translation** | Local AI model, 37 languages | Cloud translation services | Included for their content | You build it |
 | **Word lookup** | Yes, on your computer (optionally Gemini: the meaning that fits the sentence) | Yes | Yes | No |
+| **Speaking practice with feedback** | 🎯 Study: say it, checked word by word on your computer | Varies | Some | No |
 | **Grammar patterns and new examples** | ✨ Vary (optional Gemini) + real examples from your own videos | Varies | Lessons, in some | No |
 | **Shadowing loop** | Built in | Varies | Varies | Player scripts |
 | **Flashcards / spaced repetition** | Favorites with spaced-repetition review; text export for Anki | Yes (e.g. Migaku: cards with screenshot and audio, Anki export) | Yes, in some | No |
@@ -151,6 +153,20 @@ Press ✨ on a card. You get the grammar pattern of the sentence, a short explan
 
 Choose your level (A2, B1, B2, C1) in the top bar. Vary needs a free Gemini API key: put `GEMINI_API_KEY=…` in a `.env` file in the project folder, or paste it in **⚙ Settings**. [docs/AI.md](docs/AI.md) explains what is sent and what it costs.
 
+### 8. Study a sentence by speaking (optional, Gemini)
+
+Press 🎯 on a card (or **🎯 Study this pattern** in Vary, or 🎯 on a favorite). A study page opens with a **speaking ladder** built from that sentence: the simplest core first, then other subjects, negative, question, added details, and finally the full sentence and a little beyond.
+
+For each step you see the sentence **in your language**; the English is blurred.
+
+1. Press **🎤 Say it** and say it in English. Your voice is turned into text **on your computer** (Whisper) and compared word by word: *✓ Great!*, *≈ Almost. Missing: is*, or *✗ Not quite*.
+2. The English is revealed (or press **👁 Show**, or **💡 Hint** for a few key words first). **🔊** reads it aloud, **🔁** repeats it until you stop it: shadow it.
+3. Mark **✓ I knew it / ✗ I didn't**. At the end you can practise only the ones you missed, or add them to **Review**, where they come back in the same direction (your language → say it in English).
+
+Switch between **List** and **One by one** (keys: `M` speak, `Space` show, `L` listen, `1`/`2` mark, `←`/`→` move). **🔄 New set** writes a different ladder.
+
+<img src="docs/img/study.png" alt="Study: a speaking ladder with blurred English, a checked spoken answer and a hint" width="760"/>
+
 ### Keyboard shortcuts
 
 | Key | Action |
@@ -161,6 +177,7 @@ Choose your level (A2, B1, B2, C1) in the top bar. Vary needs a free Gemini API 
 | `V` | hide / show the video |
 | `Esc` | close a popup, the video list or a dialog |
 | `Space`, `1`–`4` | in Review: reveal the translation, then rate *Again / Hard / Good / Easy* |
+| `M`, `Space`, `L`, `1`/`2`, `←`/`→` | in Study (one by one): speak, show, listen, mark, move |
 
 More detail: [docs/USAGE.md](docs/USAGE.md).
 
@@ -197,9 +214,11 @@ Whisper's own subtitle segments often end in the middle of a sentence, and trans
 
 **Where is my data?** In the `data/` folder of the project. Copy it to back it up; delete a video in the app (🗑) to remove it.
 
-**Does it send anything anywhere?** Not unless you turn on the AI features. The app listens on `127.0.0.1` only; network access is used to download the models and the videos you ask for, and to show YouTube thumbnails on the home screen. If you add a Gemini key, the sentence you ✨ Vary is sent to Google's Gemini API (and, only if you turn that option on, the sentence of a word you click), nothing else. On Gemini's free tier Google may use what you send to improve its products ([docs/AI.md](docs/AI.md)).
+**Does it send anything anywhere?** Not unless you turn on the AI features. The app listens on `127.0.0.1` only; network access is used to download the models and the videos you ask for, and to show YouTube thumbnails on the home screen. If you add a Gemini key, the sentence you ✨ Vary or 🎯 Study is sent to Google's Gemini API (and, only if you turn that option on, the sentence of a word you click), nothing else. On Gemini's free tier Google may use what you send to improve its products ([docs/AI.md](docs/AI.md)).
 
-**Do I need a Gemini key?** No. Everything except ✨ Vary works without it. Translation and word meanings always use the local model unless you turn on *Gemini for word meanings* in Settings.
+**Is my voice uploaded?** No. In 🎯 Study your recording is transcribed by Whisper on your computer and deleted right after; only the sentence you study goes to Gemini to build the ladder. The browser asks for microphone access the first time.
+
+**Do I need a Gemini key?** No. Everything except ✨ Vary and 🎯 Study works without it. Translation and word meanings always use the local model unless you turn on *Gemini for word meanings* in Settings.
 
 ## Known limitations and ideas
 

@@ -2,6 +2,8 @@
 
 With an API key, **✨ Vary** uses Google's **Gemini API**: the grammar pattern of a sentence, a short explanation in your language, and new example sentences in the same pattern at your level, plus real sentences with the same pattern from your own videos.
 
+It also builds the speaking ladders of **🎯 Study** (see [USAGE.md](USAGE.md#-study-speaking-practice)): Gemini writes the steps; **your voice never goes to Gemini or anywhere else**: it is transcribed by Whisper on your computer, compared word by word, and the recording is deleted right away.
+
 Everything else stays on your computer: videos are still translated by the local model (HY-MT), and clicked words are still translated by it too.
 
 **Optional:** *Settings → Also use Gemini for word meanings* (off by default) asks Gemini for the meaning of a clicked word *in its sentence*, with the dictionary form and part of speech, instead of translating the word on its own. It is more accurate for words with several meanings, but it sends that sentence to Google; if Gemini fails, the local model is used.
@@ -30,6 +32,7 @@ Choose your English level (A2, B1, B2, C1; default B1) in the top bar or in Sett
 | Action | Sent | Not sent |
 |---|---|---|
 | ✨ Vary | the sentence, the sentence before it (for context), your translation language and level, and the examples already shown (when you ask for more) | the video, the audio, other subtitles, your library, your favorites |
+| 🎯 Study | the sentence, the sentence before it, your translation language and level | your voice (transcribed locally), the video, everything else |
 | Click a word (only with *Gemini for word meanings* on) | the word, the sentence it is in, your translation language and level | everything else |
 
 Real examples from your library are found **on your computer**: Gemini only suggests a few search phrases (such as "good at"), the search runs locally.
@@ -40,7 +43,9 @@ Real examples from your library are found **on your computer**: Gemini only sugg
 
 The free tier has rate limits; when they are reached the app says so and you can try again later. On the paid tier, the default model was priced at **$0.30 per million input tokens and $2.50 per million output tokens** (October 2026). One Vary request uses roughly 400 input and 300–400 output tokens, so about **$0.001**: around a dollar for a thousand requests. Prices change; see the pricing page.
 
-Every answer is **cached** in `data/ai-cache.json`, so opening the same sentence again costs nothing. **＋ More examples** always makes a new request.
+Every answer is **cached** in `data/ai-cache.json`, so opening the same sentence again costs nothing. **＋ More examples** and **🔄 New set** always make a new request. A Study ladder (12 steps at B1) is one request of about 400 input and 1,000–1,500 output tokens: about $0.004 on the paid tier.
+
+The default model (`gemini-3.5-flash-lite`) was tested on real sentences: with the current prompt (English first, then its translation) the ladders were correct and consistent and arrived in about 3 seconds. `gemini-3.8-flash` wrote slightly richer ladders but took about 17 seconds and quickly hit the free-tier limit.
 
 ## Model
 
