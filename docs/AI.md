@@ -12,13 +12,15 @@ Without a key everything else works as before: word meanings come from the local
 1. Create a free key in Google AI Studio: <https://aistudio.google.com/apikey>.
 2. In the app open **⚙ Settings → AI features**, paste the key, press **Save**, then **Test**.
 
-Or set it as an environment variable, which takes precedence over the saved key:
+Or put it in a `.env` file in the project folder (copy `.env.example`), which also works for desktop shortcuts:
 
 ```bash
-GEMINI_API_KEY=your-key npm start
+GEMINI_API_KEY=your-key
 ```
 
-The key saved in Settings is stored in `data/settings.json` on your computer (that folder is never committed to git). It is **never sent to the browser**: the interface only sees its last four characters.
+An environment variable (`GEMINI_API_KEY=your-key npm start`) or the `.env` file takes precedence over a key saved in Settings. `.env` is ignored by git.
+
+A key saved in Settings is stored in `data/settings.json` on your computer (that folder is never committed to git). It is **never sent to the browser**: the interface only sees its last four characters.
 
 ## Level
 

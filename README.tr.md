@@ -128,7 +128,7 @@ Videoyu gizlemek için `V`'ye bas (ya da **🙈 Gizle**). Panel genişler, küç
 
 **⚙ Ayarlar**'dan arayüz dilini ve altyazıların çevrileceği dili seç. Sonradan değiştirirsen her video kendini yeni dile çevirmeyi önerir.
 
-<img src="docs/img/settings.png" alt="Ayarlar penceresi" width="560"/>
+<img src="docs/img/settings-tr.png" alt="Ayarlar penceresi" width="560"/>
 
 ### 6. Cümleleri kaydet ve tekrar et
 
@@ -147,7 +147,9 @@ Bir cümleyi kaydetmek için karttaki ☆'ye bas (birden çok cümleli kartta ha
 
 Bir kartta ✨'e bas. Cümlenin gramer kalıbı, kendi dilinde kısa bir açıklama ve seviyene uygun, aynı kalıpla yazılmış yeni örnek cümleler gelir (kalıp kelimeleri vurgulu, 🔊 ile dinle, ☆ ile kaydet). **＋ Daha fazla örnek** yenilerini yazar. Altında **diğer videolarından aynı kalıbı kullanan gerçek cümleler** var, orijinal sesleriyle dinleyebilirsin.
 
-Seviyeni (A2, B1, B2, C1) üst menüden seç. Çeşitle ücretsiz bir Gemini API anahtarı ister: nasıl ekleneceği, neyin gönderildiği ve ücreti [docs/AI.md](docs/AI.md) içinde (İngilizce).
+<img src="docs/img/vary-tr.png" alt="Çeşitle: kalıp, açıklama ve kalıbı vurgulanmış yeni örnekler" width="760"/>
+
+Seviyeni (A2, B1, B2, C1) üst menüden seç. Çeşitle ücretsiz bir Gemini API anahtarı ister: proje klasöründe bir `.env` dosyasına `GEMINI_API_KEY=…` yaz ya da **⚙ Ayarlar**'a yapıştır. Neyin gönderildiği ve ücreti [docs/AI.md](docs/AI.md) içinde (İngilizce).
 
 ### Klavye kısayolları
 

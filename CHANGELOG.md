@@ -12,6 +12,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - **Level** (A2, B1, B2, C1; default B1) in the top bar and in Settings.
 - Settings for the Gemini key (stored locally, never sent to the browser) and model, with a connection test.
 - Per-sentence times in every card (`sentTimes`).
+- A `.env` file in the project folder is read at start (see `.env.example`).
 
 ### Changed
 - `npm run regroup` keeps the translations of cards whose text did not change.

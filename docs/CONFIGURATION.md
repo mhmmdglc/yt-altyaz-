@@ -10,6 +10,8 @@ WHISPER_MODEL=small.en npm start
 
 On Windows PowerShell: `$env:PORT=3001; npm start`.
 
+**`.env` file.** To keep settings without typing them every time, copy `.env.example` to `.env` in the project folder and fill it in, e.g. `GEMINI_API_KEY=…`. The app reads it at start (variables already set in the environment win). `.env` is ignored by git, so your key never ends up in the repository. This also works when the app is started from a desktop shortcut, which does not load your shell profile.
+
 ## App
 
 | Variable | Default | Meaning |

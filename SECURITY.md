@@ -10,7 +10,7 @@ YT Altyazı is a **local** application: a web interface served from your own com
 - Only accepts `http`/`https` links for download, passes them to yt-dlp after `--`, and runs tools without a shell.
 - The translation server (`llama-server`) listens on `127.0.0.1` only.
 - Downloads of models are checksum-verified.
-- A Gemini API key saved in Settings is stored in `data/settings.json` on your computer and is never sent to the browser (only its last four characters are shown). It is sent only to Google's API, in a request header. Prefer the `GEMINI_API_KEY` environment variable if you do not want it written to disk.
+- A Gemini API key saved in Settings is stored in `data/settings.json` on your computer and is never sent to the browser (only its last four characters are shown). It is sent only to Google's API, in a request header. A key in the project's `.env` file is also plain text on disk; `.env` is ignored by git so it is never committed. An environment variable keeps it off the disk entirely.
 
 ## What it cannot protect against
 
