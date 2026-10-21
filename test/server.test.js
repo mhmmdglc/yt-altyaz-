@@ -9,9 +9,24 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), '..');
+
+// Fake Gemini endpoint for the AI routes
+const geminiCalls = [];
+let geminiReply = null;
+const fakeGemini = http.createServer((req, res) => {
+  let body = '';
+  req.on('data', (d) => (body += d));
+  req.on('end', () => {
+    geminiCalls.push({ url: req.url, key: req.headers['x-goog-api-key'], body: JSON.parse(body || '{}') });
+    const { status, obj } = geminiReply(geminiCalls.at(-1));
+    res.writeHead(status, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify(status === 200 ? { candidates: [{ content: { parts: [{ text: JSON.stringify(obj) }] } }] } : obj));
+  });
+});
+await new Promise((r) => fakeGemini.listen(0, '127.0.0.1', r));
 const tmp = mkdtempSync(path.join(os.tmpdir(), 'ytaltyazi-'));
 const children = [];
-test.after(() => { children.forEach((c) => c.kill()); rmSync(tmp, { recursive: true, force: true }); });
+test.after(() => { children.forEach((c) => c.kill()); fakeGemini.close(); rmSync(tmp, { recursive: true, force: true }); });
 
 const freePort = () => new Promise((resolve) => {
   const s = net.createServer().listen(0, '127.0.0.1', () => { const { port } = s.address(); s.close(() => resolve(port)); });
@@ -22,7 +37,7 @@ async function startServer(dataDir = path.join(tmp, `data-${children.length}`)) 
   const port = await freePort();
   const child = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, WORK_DIR: path.join(tmp, 'work'), HYMT_PORT: String(await freePort()), HYMT_MODEL_DIR: path.join(tmp, 'no-model') },
+    env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, WORK_DIR: path.join(tmp, 'work'), HYMT_PORT: String(await freePort()), HYMT_MODEL_DIR: path.join(tmp, 'no-model'), GEMINI_API_KEY: '', GEMINI_MODEL: '', GEMINI_API_BASE: `http://127.0.0.1:${fakeGemini.address().port}` },
     stdio: 'ignore'
   });
   children.push(child);
@@ -129,4 +144,105 @@ test('an existing library that was translated before target languages existed is
   const legacy = await startServer(dataDir);
   assert.equal((await request(legacy.port, 'GET', '/api/settings')).json.targetLang, 'tr');
   assert.equal((await request(legacy.port, 'GET', `/api/project/${ID}`)).json.trLang, 'tr');
+});
+
+/* ---------- AI and favorites ---------- */
+
+const KEY = 'AIzaSyTEST-1234567890abcdefWXYZ';
+
+function writeProject(dataDir, id, segments) {
+  mkdirSync(path.join(dataDir, id), { recursive: true });
+  writeFileSync(path.join(dataDir, id, 'project.json'), JSON.stringify({ id, title: 'Talk', url: 'https://example.com', createdAt: '2026-01-01T00:00:00Z', trLang: 'tr', segments }));
+}
+
+test('the Gemini key can be saved but is never sent back to the browser', async () => {
+  const srv = await startServer();
+  assert.equal((await request(srv.port, 'PUT', '/api/settings', { body: { geminiApiKey: 'short' } })).status, 400);
+  assert.equal((await request(srv.port, 'PUT', '/api/settings', { body: { geminiApiKey: KEY, level: 'B2' } })).status, 200);
+  const s = await request(srv.port, 'GET', '/api/settings');
+  assert.equal(s.json.ai.configured, true);
+  assert.equal(s.json.ai.keyHint, '…WXYZ');
+  assert.equal(s.json.level, 'B2');
+  assert.ok(!s.text.includes(KEY), 'the full key must not appear in any response');
+  assert.equal((await request(srv.port, 'PUT', '/api/settings', { body: { level: 'Z9' } })).status, 400);
+  await request(srv.port, 'PUT', '/api/settings', { body: { geminiApiKey: '' } });
+  assert.equal((await request(srv.port, 'GET', '/api/settings')).json.ai.configured, false);
+});
+
+test('Vary: needs a key, returns examples and real library matches, and caches the answer', async () => {
+  const srv = await startServer();
+  writeProject(srv.dataDir, ID, [
+    { start: 0, end: 3, text: "I'm not good at accounting.", sents: ["I'm not good at accounting."], sentTimes: [[0, 3]], tr: 'Muhasebede iyi değilim.' },
+    { start: 3, end: 6, text: 'He is good at chess.', sents: ['He is good at chess.'], sentTimes: [[3, 6]], tr: 'Satrançta iyi.' }
+  ]);
+  await request(srv.port, 'PUT', '/api/settings', { body: { targetLang: 'tr' } });
+  const noKey = await request(srv.port, 'POST', '/api/ai/vary', { body: { text: "I'm not good at accounting." } });
+  assert.equal(noKey.status, 409);
+  assert.equal(noKey.json.code, 'NO_AI_KEY');
+
+  await request(srv.port, 'PUT', '/api/settings', { body: { geminiApiKey: KEY } });
+  let n = 0;
+  geminiReply = () => ({ status: 200, obj: { pattern: 'be (not) good at + -ing', explanation: 'Açıklama.', examples: [{ en: `Example ${++n} [[good at]] it.`, translation: `Örnek ${n}` }], search: ['good at'] } });
+  geminiCalls.length = 0;
+  const first = await request(srv.port, 'POST', '/api/ai/vary', { body: { text: "I'm not good at accounting." } });
+  assert.equal(first.status, 200);
+  assert.equal(first.json.examples.length, 1);
+  assert.deepEqual(first.json.library.map((h) => h.text), ['He is good at chess.'], 'the studied sentence itself is not listed');
+  assert.equal(geminiCalls[0].key, KEY);
+
+  const cached = await request(srv.port, 'POST', '/api/ai/vary', { body: { text: "I'm not good at accounting." } });
+  assert.equal(geminiCalls.length, 1, 'the second request is served from the cache');
+  assert.deepEqual(cached.json.examples, first.json.examples);
+
+  const more = await request(srv.port, 'POST', '/api/ai/vary', { body: { text: "I'm not good at accounting.", more: true } });
+  assert.equal(more.json.examples.length, 2);
+  assert.match(geminiCalls[1].body.contents[0].parts[0].text, /Do not repeat any of these sentences: "Example 1 good at it\."/);
+});
+
+test('word meaning uses the sentence when a key is set, and reports quota errors', async () => {
+  const srv = await startServer();
+  await request(srv.port, 'PUT', '/api/settings', { body: { targetLang: 'tr', geminiApiKey: KEY } });
+  geminiReply = () => ({ status: 200, obj: { lemma: 'trunk', pos: 'isim', meaning: 'hortum', note: '' } });
+  const r = await request(srv.port, 'GET', `/api/word?w=trunks&s=${encodeURIComponent('Elephants have long trunks.')}`);
+  assert.equal(r.json.tr, 'hortum');
+  assert.equal(r.json.source, 'gemini');
+  geminiReply = () => ({ status: 429, obj: { error: { message: 'Resource has been exhausted' } } });
+  const q = await request(srv.port, 'GET', `/api/word?w=chess&s=${encodeURIComponent('He plays chess.')}`);
+  assert.equal(q.status, 429);
+  assert.equal(q.json.code, 'AI_QUOTA');
+});
+
+test('favorites: save a video sentence with its own times, an example, review, export and delete', async () => {
+  const srv = await startServer();
+  writeProject(srv.dataDir, ID, [
+    { start: 0, end: 6, text: 'One here. Two there.', sents: ['One here.', 'Two there.'], sentTimes: [[0, 2.5], [2.6, 6]], tr: 'Bir. İki.', trParts: ['Bir.', 'İki.'] }
+  ]);
+  const add = await request(srv.port, 'POST', '/api/favorites', { body: { projectId: ID, cardIndex: 0, sentIndex: 1 } });
+  assert.equal(add.status, 200);
+  assert.deepEqual([add.json.text, add.json.tr, add.json.start, add.json.end], ['Two there.', 'İki.', 2.6, 6]);
+  const dup = await request(srv.port, 'POST', '/api/favorites', { body: { projectId: ID, cardIndex: 0, sentIndex: 1 } });
+  assert.equal(dup.json.id, add.json.id);
+  assert.equal((await request(srv.port, 'POST', '/api/favorites', { body: { projectId: ID, cardIndex: 0, sentIndex: 9 } })).status, 404);
+  assert.equal((await request(srv.port, 'POST', '/api/favorites', { body: { projectId: '../x', cardIndex: 0, sentIndex: 0 } })).status, 400);
+
+  const ex = await request(srv.port, 'POST', '/api/favorites', { body: { kind: 'example', text: 'She is good at\tchess.', tr: 'Satrançta iyi.', pattern: 'be good at' } });
+  let list = await request(srv.port, 'GET', '/api/favorites');
+  assert.equal(list.json.items.length, 2);
+  assert.equal(list.json.due, 2, 'new favorites are due for review right away');
+
+  const reviewed = await request(srv.port, 'POST', `/api/favorites/${ex.json.id}/review`, { body: { grade: 'good' } });
+  assert.equal(reviewed.json.review.interval, 1);
+  assert.equal((await request(srv.port, 'POST', `/api/favorites/${ex.json.id}/review`, { body: { grade: 'perfect' } })).status, 400);
+  list = await request(srv.port, 'GET', '/api/favorites');
+  assert.equal(list.json.due, 1);
+
+  const tsv = await request(srv.port, 'GET', '/api/favorites/export.tsv');
+  const lines = tsv.text.trim().split('\n');
+  assert.equal(lines[0], '#separator:tab');
+  assert.ok(lines.includes('She is good at chess.\tSatrançta iyi.\tExample · be good at'), 'tabs inside a field are flattened');
+  assert.ok(lines.includes('Two there.\tİki.\tTalk @ 0:02'));
+
+  assert.equal((await request(srv.port, 'DELETE', `/api/favorites/${add.json.id}`)).status, 200);
+  assert.equal((await request(srv.port, 'GET', '/api/favorites')).json.items.length, 1);
+  assert.equal((await request(srv.port, 'DELETE', '/api/favorites/..%2F..')).status, 400);
 });

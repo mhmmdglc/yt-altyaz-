@@ -14,6 +14,11 @@
       <button id="drawerBtn" class="btn btn-ghost hidden" aria-expanded="false" data-i18n="nav.videos" data-i18n-title="nav.videosTitle"></button>
     </div>
     <div class="actions">
+      <label class="level-pick" data-i18n-title="nav.levelTitle">
+        <span data-i18n="nav.level"></span>
+        <select id="levelSelect" class="select select-sm"></select>
+      </label>
+      <a id="favBtn" href="#/favorites" class="btn btn-ghost" data-i18n-title="nav.favoritesTitle"><span data-i18n="nav.favorites"></span><span id="favBadge" class="nav-badge hidden"></span></a>
       <button id="settingsBtn" class="btn btn-ghost btn-icon" data-i18n-title="nav.settings" data-i18n-aria="nav.settings">⚙</button>
       <button id="newBtn" class="btn btn-primary" data-i18n="nav.new"></button>
     </div>
@@ -40,6 +45,9 @@
       </div>
       <div id="videoGrid" class="video-grid"></div>
     </section>
+
+    <section id="favoritesView" class="home page hidden"></section>
+    <section id="reviewView" class="home page hidden"></section>
 
     <section id="workspace" class="workspace hidden">
       <aside class="sidebar">
@@ -165,6 +173,30 @@
         <select id="targetLangSelect" class="select"></select>
         <small class="muted" data-i18n="settings.targetHint"></small>
       </label>
+      <fieldset class="field ai-box">
+        <legend data-i18n="settings.ai"></legend>
+        <small class="muted" data-i18n="settings.aiHelp"></small>
+        <p id="aiStatus" class="ai-status"></p>
+        <div class="ai-row">
+          <input id="aiKeyInput" class="input input-sm" type="password" autocomplete="off" spellcheck="false" data-i18n-placeholder="settings.aiKeyPh" />
+          <button id="aiKeySave" class="btn btn-sm btn-primary" data-i18n="settings.aiSave"></button>
+        </div>
+        <div class="ai-row">
+          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="small" data-i18n="settings.aiGetKey"></a>
+          <span class="head-spacer"></span>
+          <button id="aiTest" class="btn btn-sm" data-i18n="settings.aiTest"></button>
+          <button id="aiKeyRemove" class="btn btn-sm btn-danger" data-i18n="settings.aiRemove"></button>
+        </div>
+        <label class="ai-row">
+          <span class="small" data-i18n="settings.aiModel"></span>
+          <input id="aiModelInput" class="input input-sm" type="text" spellcheck="false" />
+        </label>
+        <label class="ai-row">
+          <span class="small" data-i18n="settings.level"></span>
+          <select id="levelSelect2" class="select select-sm"></select>
+        </label>
+        <small class="muted" data-i18n="settings.aiPrivacy"></small>
+      </fieldset>
       <div class="field">
         <span data-i18n="settings.status"></span>
         <ul class="status-list">

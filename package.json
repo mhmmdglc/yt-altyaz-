@@ -1,8 +1,19 @@
 {
     "name": "yt-altyazi",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "description": "Watch English videos with sentence-accurate subtitles, local AI translation into your language, click-a-word meanings and shadowing tools. Runs fully offline on your computer.",
-    "keywords": ["subtitles", "language-learning", "shadowing", "whisper", "whisper.cpp", "translation", "youtube", "english", "local-first", "offline"],
+    "keywords": [
+        "subtitles",
+        "language-learning",
+        "shadowing",
+        "whisper",
+        "whisper.cpp",
+        "translation",
+        "youtube",
+        "english",
+        "local-first",
+        "offline"
+    ],
     "license": "MIT",
     "type": "module",
     "main": "server.js",

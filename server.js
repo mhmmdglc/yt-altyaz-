@@ -9,6 +9,10 @@ import { buildCards } from './segmenter.js';
 import { LANGUAGES, findLanguage } from './languages.js';
 import { openBrowser } from './open-browser.js';
 import * as translator from './translator.js';
+import * as gemini from './gemini.js';
+import { createFavorites, GRADES, isDue } from './favorites.js';
+import { createAICache } from './ai-cache.js';
+import { searchLibrary, sentencesOfCard } from './library.js';
 
 // Errors the UI knows how to translate carry a `code` (public/i18n.js → err.*)
 class AppError extends Error {
@@ -84,21 +88,57 @@ async function loadProject(id) {
   return p;
 }
 
+// Gemini settings: the GEMINI_API_KEY / GEMINI_MODEL environment variables win over the values saved in settings.json
+async function aiConfig() {
+  const s = await readSettings();
+  const apiKey = process.env.GEMINI_API_KEY || s.geminiApiKey || '';
+  return {
+    apiKey,
+    source: process.env.GEMINI_API_KEY ? 'env' : s.geminiApiKey ? 'settings' : null,
+    model: process.env.GEMINI_MODEL || s.geminiModel || gemini.DEFAULT_MODEL
+  };
+}
+
+const levelOf = (s) => (gemini.LEVELS.includes(s.level) ? s.level : 'B1');
+
 app.get('/api/settings', async (_req, res) => {
   const s = await readSettings();
+  const ai = await aiConfig();
   res.json({
     targetLang: findLanguage(s.targetLang) ? s.targetLang : null,
     languages: LANGUAGES.map(({ code, name }) => ({ code, name })),
+    level: levelOf(s),
+    levels: gemini.LEVELS,
     translator: { installed: translator.modelInstalled(), running: await translator.isUp() },
-    whisperModel: findWhisperModel() ? path.basename(findWhisperModel()) : null
+    whisperModel: findWhisperModel() ? path.basename(findWhisperModel()) : null,
+    // The key itself never leaves the server; only its last characters are shown
+    ai: { configured: !!ai.apiKey, source: ai.source, model: ai.model, keyHint: ai.apiKey ? `…${ai.apiKey.slice(-4)}` : null }
   });
 });
 
 app.put('/api/settings', async (req, res) => {
-  const lang = req.body?.targetLang;
-  if (!findLanguage(lang)) return res.status(400).json({ error: 'Unsupported language', code: 'BAD_LANG' });
-  await writeSettings({ targetLang: lang });
-  res.json({ ok: true, targetLang: lang });
+  const body = req.body || {};
+  const patch = {};
+  if ('targetLang' in body) {
+    if (!findLanguage(body.targetLang)) return res.status(400).json({ error: 'Unsupported language', code: 'BAD_LANG' });
+    patch.targetLang = body.targetLang;
+  }
+  if ('level' in body) {
+    if (!gemini.LEVELS.includes(body.level)) return res.status(400).json({ error: 'Unsupported level', code: 'BAD_LEVEL' });
+    patch.level = body.level;
+  }
+  if ('geminiApiKey' in body) {
+    const key = String(body.geminiApiKey ?? '').trim();
+    if (key && !/^[\w.-]{20,200}$/.test(key)) return res.status(400).json({ error: 'This does not look like an API key', code: 'BAD_KEY' });
+    patch.geminiApiKey = key || undefined;
+  }
+  if ('geminiModel' in body) {
+    const model = String(body.geminiModel ?? '').trim();
+    if (model && !/^[\w.-]{3,80}$/.test(model)) return res.status(400).json({ error: 'Invalid model name', code: 'BAD_MODEL' });
+    patch.geminiModel = model || undefined;
+  }
+  await writeSettings(patch);
+  res.json({ ok: true });
 });
 
 /* ---------- Transcription ---------- */
@@ -278,17 +318,139 @@ app.post('/api/project/:id/translate', async (req, res) => {
   }
 });
 
-// Meaning of one clicked word: GET /api/word?w=remembering → { word, expanded, tr }
+// Meaning of one clicked word: GET /api/word?w=trunks&s=<the sentence>
+// With a Gemini key the meaning is chosen for this sentence; otherwise (or if Gemini fails) the local model translates the word alone.
 app.get('/api/word', async (req, res) => {
   const w = String(req.query.w || '').trim();
+  const sentence = String(req.query.s || '').trim().slice(0, 500);
   if (!w || w.length > 40 || !/^[\p{L}][\p{L}'’-]*$/u.test(w)) return res.status(400).json({ error: 'Invalid word', code: 'BAD_WORD' });
+  let aiError = null;
   try {
     const lang = await targetLang();
+    const ai = await aiConfig();
+    if (ai.apiKey && sentence) {
+      try {
+        const level = levelOf(await readSettings());
+        const key = aiCache.keyOf(['word', lang, level, w.toLowerCase(), sentence]);
+        const cached = await aiCache.get(key);
+        if (cached) return res.json({ ...cached, source: 'gemini' });
+        const result = await gemini.wordInContext({ apiKey: ai.apiKey, model: ai.model, word: w, sentence, lang, level });
+        await aiCache.set(key, result);
+        return res.json({ ...result, source: 'gemini' });
+      } catch (e) {
+        if (!(e instanceof gemini.AIError) || !translator.modelInstalled() || ['AI_KEY_INVALID', 'AI_MODEL'].includes(e.code)) throw e;
+        aiError = e.code; // fall back to the local model below
+      }
+    }
     await translator.ensureTranslator();
-    res.json(await translator.translateWord(w, lang));
+    res.json({ ...(await translator.translateWord(w, lang)), source: 'local', ...(aiError ? { fallback: aiError } : {}) });
   } catch (e) {
     sendError(res, e.code ? e : Object.assign(e, { status: 503, code: 'TRANSLATOR_FAILED' }));
   }
+});
+
+/* ---------- AI: Vary ---------- */
+
+const aiCache = createAICache(DATA_DIR);
+
+// POST /api/ai/vary { text, context?, more? } → { pattern, explanation, examples: [{ en, tr }], library: [...] }
+// The answer is cached per sentence, language and level; `more: true` asks for new examples and appends them.
+app.post('/api/ai/vary', async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  const context = String(req.body?.context || '').trim().slice(0, 500);
+  if (!text || text.length > 400) return res.status(400).json({ error: 'Invalid sentence', code: 'BAD_TEXT' });
+  try {
+    const lang = await targetLang();
+    const ai = await aiConfig();
+    const level = levelOf(await readSettings());
+    const key = aiCache.keyOf(['vary', lang, level, text]);
+    let result = await aiCache.get(key);
+    if (!result || req.body?.more) {
+      const exclude = (result?.examples || []).map((e) => e.en.replace(/\[\[|\]\]/g, ''));
+      const fresh = await gemini.vary({ apiKey: ai.apiKey, model: ai.model, sentence: text, context, lang, level, exclude });
+      result = result ? { ...result, examples: [...result.examples, ...fresh.examples] } : fresh;
+      await aiCache.set(key, result);
+    }
+    const library = await searchLibrary(DATA_DIR, result.search || [], { exclude: text, limit: 5 });
+    res.json({ ...result, level, library });
+  } catch (e) {
+    sendError(res, e);
+  }
+});
+
+// Checks that the configured key and model work (used by the Settings dialog)
+app.post('/api/ai/test', async (_req, res) => {
+  try {
+    const ai = await aiConfig();
+    await gemini.wordInContext({ apiKey: ai.apiKey, model: ai.model, word: 'test', sentence: 'This is a test.', lang: (await readSettings()).targetLang || 'tr' });
+    res.json({ ok: true, model: ai.model });
+  } catch (e) {
+    sendError(res, e);
+  }
+});
+
+/* ---------- Favorites & review ---------- */
+
+const favorites = createFavorites(DATA_DIR);
+app.param('fid', (req, res, next, id) => (isValidId(id) ? next() : res.status(400).json({ error: 'Invalid id', code: 'BAD_ID' })));
+
+app.get('/api/favorites', async (_req, res) => {
+  const items = await favorites.list();
+  const now = Date.now();
+  res.json({ items, due: items.filter((x) => isDue(x, now)).length });
+});
+
+// Save a sentence of a video ({ projectId, cardIndex, sentIndex }) or a generated example ({ kind: 'example', text, tr, pattern })
+app.post('/api/favorites', async (req, res) => {
+  const b = req.body || {};
+  try {
+    if (b.kind === 'example') {
+      const text = String(b.text || '').trim();
+      const tr = String(b.tr || '').trim();
+      if (!text || text.length > 400 || tr.length > 600) return res.status(400).json({ error: 'Invalid example', code: 'BAD_TEXT' });
+      const item = await favorites.add({ kind: 'example', text, tr, lang: (await readSettings()).targetLang || null, pattern: String(b.pattern || '').slice(0, 200), source: String(b.source || '').slice(0, 400) });
+      return res.json(item);
+    }
+    if (!isValidId(b.projectId) || !Number.isInteger(b.cardIndex) || !Number.isInteger(b.sentIndex)) return res.status(400).json({ error: 'Invalid sentence reference', code: 'BAD_TEXT' });
+    const project = await loadProject(b.projectId);
+    const card = project.segments[b.cardIndex];
+    const sentence = card && sentencesOfCard(card)[b.sentIndex];
+    if (!sentence) return res.status(404).json({ error: 'Sentence not found', code: 'NOT_FOUND' });
+    const item = await favorites.add({
+      kind: 'video', projectId: project.id, title: project.title, cardIndex: b.cardIndex, sentIndex: b.sentIndex,
+      text: sentence.text, tr: sentence.tr, lang: project.trLang || null, start: sentence.start, end: sentence.end
+    });
+    res.json(item);
+  } catch (e) {
+    if (e.code === 'ENOENT') return res.status(404).json({ error: 'Project not found', code: 'NOT_FOUND' });
+    sendError(res, e);
+  }
+});
+
+app.delete('/api/favorites/:fid', async (req, res) => {
+  await favorites.remove(req.params.fid);
+  res.json({ ok: true });
+});
+
+app.post('/api/favorites/:fid/review', async (req, res) => {
+  const grade = req.body?.grade;
+  if (!GRADES.includes(grade)) return res.status(400).json({ error: 'Invalid grade', code: 'BAD_GRADE' });
+  const item = await favorites.review(req.params.fid, grade);
+  if (!item) return res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
+  res.json(item);
+});
+
+// Tab-separated export that Anki (File → Import) and spreadsheets understand
+app.get('/api/favorites/export.tsv', async (_req, res) => {
+  const cell = (s) => String(s ?? '').replace(/[\t\r\n]+/g, ' ').trim();
+  const time = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+  const rows = (await favorites.list()).map((x) => [
+    cell(x.text), cell(x.tr),
+    cell(x.kind === 'video' ? `${x.title} @ ${time(x.start)}` : `Example · ${x.pattern || ''}`)
+  ].join('\t'));
+  res.setHeader('Content-Type', 'text/tab-separated-values; charset=utf-8');
+  res.setHeader('Content-Disposition', 'attachment; filename="yt-altyazi-favorites.tsv"');
+  res.send(['#separator:tab', '#html:false', ...rows].join('\n') + '\n');
 });
 
 /* ---------- Projects ---------- */

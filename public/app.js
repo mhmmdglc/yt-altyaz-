@@ -1,7 +1,9 @@
 import { t, tn, getLang, setLang, applyI18n, localeOptions, languageName } from './i18n.js';
-import { LOCALES } from './locales.js';
-
-const $ = (sel) => document.querySelector(sel);
+import { $, fmtTime, toast, sleep, apiError, store, api, el } from './util.js';
+import { stopClip } from './clip.js';
+import { loadFavorites, dueFavorites, onFavoritesChange, findVideoFav, addVideoFav, removeFav } from './fav-store.js';
+import { openVary, closeVary } from './vary.js';
+import { renderFavorites, renderReview } from './favorites-view.js';
 
 const els = {
   projectList: $('#projectList'),
@@ -9,6 +11,18 @@ const els = {
   newBtn: $('#newBtn'),
   emptyNewBtn: $('#emptyNewBtn'),
   settingsBtn: $('#settingsBtn'),
+  favBtn: $('#favBtn'),
+  favBadge: $('#favBadge'),
+  levelSelect: $('#levelSelect'),
+  levelSelect2: $('#levelSelect2'),
+  favoritesView: $('#favoritesView'),
+  reviewView: $('#reviewView'),
+  aiStatus: $('#aiStatus'),
+  aiKeyInput: $('#aiKeyInput'),
+  aiKeySave: $('#aiKeySave'),
+  aiKeyRemove: $('#aiKeyRemove'),
+  aiTest: $('#aiTest'),
+  aiModelInput: $('#aiModelInput'),
   drawerBtn: $('#drawerBtn'),
   drawerBackdrop: $('#drawerBackdrop'),
   sidebar: $('.sidebar'),
@@ -68,7 +82,6 @@ let projects = [];
 let current = null;
 let settings = { targetLang: null, languages: [], translator: { installed: false, running: false }, whisperModel: null };
 let activeIndex = -1;
-let toastTimer = null;
 let lastPosSave = 0;
 let manualScrollAt = 0;
 let transcribing = false;
@@ -81,49 +94,15 @@ let playUntil = null;
 let loopIndex = -1;
 let loopTimer = null;
 
-function fmtTime(s) {
-  s = Math.max(0, Math.floor(s || 0));
-  const h = Math.floor(s / 3600);
-  const m = Math.floor((s % 3600) / 60);
-  const sec = s % 60;
-  const mm = String(m).padStart(2, '0');
-  const ss = String(sec).padStart(2, '0');
-  return h > 0 ? `${h}:${mm}:${ss}` : `${m}:${ss}`;
-}
-
 function fmtDate(iso) {
   const d = new Date(iso);
   return isNaN(d) ? '' : d.toLocaleDateString(getLang(), { day: 'numeric', month: 'short', year: 'numeric' });
 }
 
-function toast(msg) {
-  els.toast.textContent = msg;
-  els.toast.classList.remove('hidden');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => els.toast.classList.add('hidden'), 2200);
-}
-
-function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
-
-// Message for an API error body { error, code }: translated when we know the code
-function apiError(body) {
-  const key = `err.${body?.code}`;
-  const known = body?.code && LOCALES.en[key] ? t(key) : null;
-  return known || body?.error || t('err.INTERNAL');
-}
-
 const titleOf = (p) => p.title || t('home.untitled');
 const lowercase = (s) => { try { return s.toLocaleLowerCase(settings.targetLang || 'en'); } catch { return s.toLowerCase(); } };
 
-/* ---------- Local storage (resume position, speed, toggles) ---------- */
-function store(key, value) {
-  try {
-    if (value === undefined) return localStorage.getItem(key);
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, String(value));
-  } catch { return null; }
-}
-
+/* ---------- Resume position ---------- */
 function savedPos(id) { return Number(store(`pos:${id}`)) || 0; }
 
 function savePos(force) {
@@ -138,18 +117,27 @@ function savePos(force) {
 
 /* ---------- Views & routing ---------- */
 // #/ → home (video grid), #/v/<id> → video + subtitles
+let leavePage = null; // cleanup of the favorites / review page
+
 function showView(name) {
-  els.empty.classList.toggle('hidden', name !== 'empty');
-  els.home.classList.toggle('hidden', name !== 'home');
-  els.workspace.classList.toggle('hidden', name !== 'workspace');
+  leavePage?.();
+  leavePage = null;
+  const views = { empty: els.empty, home: els.home, workspace: els.workspace, favorites: els.favoritesView, review: els.reviewView };
+  for (const [n, node] of Object.entries(views)) node.classList.toggle('hidden', n !== name);
   els.drawerBtn.classList.toggle('hidden', name !== 'workspace');
+  els.favBtn.classList.toggle('active', name === 'favorites' || name === 'review');
+  if (name === 'workspace' && current) document.title = `${titleOf(current)} — YT Altyazı`;
   if (name !== 'workspace') {
     closeDrawer();
+    closeVary();
     savePos(true);
     els.video.pause();
-    document.title = `YT Altyazı — ${t('home.title')}`;
+    document.title = `YT Altyazı — ${t(name === 'favorites' || name === 'review' ? 'fav.title' : 'home.title')}`;
   }
 }
+
+const hasProject = (id) => projects.some((p) => p.id === id);
+const openVideoAt = (id, at) => go(`#/v/${id}/t/${Number(at).toFixed(2)}`);
 
 function go(hash) {
   if (location.hash === hash) route();
@@ -157,8 +145,16 @@ function go(hash) {
 }
 
 async function route() {
-  const m = location.hash.match(/^#\/v\/([\w-]+)/);
-  if (m && projects.some((p) => p.id === m[1])) return openProject(m[1]);
+  const hash = location.hash;
+  if (hash.startsWith('#/favorites') || hash.startsWith('#/review')) {
+    await Promise.all([loadProjects(), loadFavorites()]);
+    const review = hash.startsWith('#/review');
+    showView(review ? 'review' : 'favorites');
+    leavePage = review ? renderReview(els.reviewView, { hasProject }) : renderFavorites(els.favoritesView, { hasProject, openVideoAt });
+    return;
+  }
+  const m = hash.match(/^#\/v\/([\w-]+)(?:\/t\/([\d.]+))?/);
+  if (m && hasProject(m[1])) return openProject(m[1], m[2] ? Number(m[2]) : null);
   if (m) history.replaceState(null, '', '#/');
   await loadProjects();
   showView(projects.length ? 'home' : 'empty');
@@ -205,10 +201,26 @@ function markActive(id) {
   });
 }
 
-async function openProject(id) {
-  if (current && current.id === id) return showView('workspace');
+let pendingSeek = null; // a time to jump to once the video is loaded (#/v/<id>/t/<seconds>)
+
+function jumpTo(at) {
+  els.video.currentTime = at;
+  manualScrollAt = 0;
+  updateActive();
+  scrollToActive(true);
+  history.replaceState(null, '', `#/v/${current.id}`);
+}
+
+async function openProject(id, at = null) {
+  if (current && current.id === id) {
+    showView('workspace');
+    if (at !== null) jumpTo(at);
+    return;
+  }
   savePos(true);
   stopLoop();
+  closeVary();
+  pendingSeek = at;
 
   let p;
   try {
@@ -389,6 +401,7 @@ function renderList() {
   const frag = document.createDocumentFragment();
   current.segments.forEach((seg, i) => frag.appendChild(renderLine(seg, i)));
   els.subList.appendChild(frag);
+  updateFavMarks();
   updateActive();
 }
 
@@ -400,16 +413,15 @@ const SENT_COLORS = 3; // style.css → .sc0 … .sc2
 const sentencesOf = (seg) => (seg.sents && seg.sents.length ? seg.sents : splitSentences(seg.text));
 
 // Splits the English text into sentences (coloured when a card has several) and clickable word spans
-function renderEnglish(el, seg) {
+function renderEnglish(target, seg) {
   const sentences = sentencesOf(seg);
   const multi = sentences.length > 1;
   sentences.forEach((sentence, k) => {
-    if (k) el.append(' ');
-    let wrap = el;
-    if (multi) {
-      wrap = document.createElement('span');
-      wrap.className = `s sc${k % SENT_COLORS}`;
-    }
+    if (k) target.append(' ');
+    // Every sentence is its own span (for favorites); with several sentences it also gets a colour
+    const wrap = document.createElement('span');
+    wrap.className = multi ? `sent s sc${k % SENT_COLORS}` : 'sent';
+    wrap.dataset.k = String(k);
     for (const tok of sentence.split(/(\s+)/)) {
       if (!tok) continue;
       const m = /^([^\p{L}\p{N}]*)(.*?)([^\p{L}\p{N}]*)$/su.exec(tok);
@@ -421,7 +433,7 @@ function renderEnglish(el, seg) {
       wrap.appendChild(w);
       if (m[3]) wrap.append(m[3]);
     }
-    if (multi) el.appendChild(wrap);
+    target.appendChild(wrap);
   });
 }
 
@@ -484,14 +496,14 @@ async function showWordPop(wEl, line) {
   };
   const span = (cls, text) => Object.assign(document.createElement('span'), { className: cls, textContent: text });
 
-  const key = `${settings.targetLang}:${word.toLowerCase()}`;
+  // The sentence goes along so that (with Gemini) the meaning fits this sentence
+  const sentence = wEl.closest('.sent')?.textContent || '';
+  const key = `${settings.targetLang}:${word.toLowerCase()}:${settings.ai?.configured ? sentence : ''}`;
   let info = wordCache.get(key);
   if (!info) {
     fill([span('wp-word', word), span('wp-tr wp-wait', '…')]);
     try {
-      const r = await fetch(`/api/word?w=${encodeURIComponent(word)}`);
-      info = await r.json();
-      if (!r.ok) throw new Error(apiError(info));
+      info = await api(`/api/word?w=${encodeURIComponent(word)}&s=${encodeURIComponent(sentence)}`);
       wordCache.set(key, info);
     } catch (err) {
       if (token === wordToken) fill([span('wp-word', word), span('wp-tr wp-err', `⚠️ ${err.message || t('word.failed')}`)]);
@@ -499,10 +511,70 @@ async function showWordPop(wEl, line) {
     }
   }
   if (token !== wordToken) return;
+  const lemma = info.lemma && info.lemma.toLowerCase() !== word.toLowerCase() ? info.lemma : null;
   fill([
     span('wp-word', info.expanded ? `${word} (${info.expanded})` : word),
-    span('wp-tr', info.tr)
+    lemma || info.pos ? span('wp-pos', [lemma, info.pos].filter(Boolean).join(' · ')) : null,
+    span('wp-tr', info.tr),
+    info.note ? el('div.wp-note', { text: info.note }) : null,
+    info.fallback ? el('div.wp-note.muted', { text: t('word.fallback') }) : null
+  ].filter(Boolean));
+}
+
+/* ---------- Card actions: ⭐ favorite, ✨ vary ---------- */
+
+function closePickers() {
+  document.querySelectorAll('.sent-pick').forEach((x) => x.remove());
+}
+
+// Cards with several sentences ask which one; a single sentence is used directly
+function pickSentence(line, i, action) {
+  closePickers();
+  const sents = sentencesOf(current.segments[i]);
+  if (sents.length === 1) return runSentenceAction(line, i, 0, action);
+  const pop = el('div.sent-pick', { onclick: (e) => e.stopPropagation() }, [
+    el('div.small.muted', { text: t('card.pick') }),
+    ...sents.map((text, k) => el(`button.sent-pick-item.s.sc${k % SENT_COLORS}`, { onclick: () => { pop.remove(); runSentenceAction(line, i, k, action); } }, [
+      action === 'fav' ? (findVideoFav(current.id, i, k) ? '★ ' : '☆ ') : '✨ ', text
+    ]))
   ]);
+  line.appendChild(pop);
+}
+
+async function runSentenceAction(line, i, k, action) {
+  const sents = sentencesOf(current.segments[i]);
+  if (action === 'vary') {
+    const prev = k > 0 ? sents[k - 1] : i > 0 ? sentencesOf(current.segments[i - 1]).at(-1) : '';
+    manualScrollAt = Date.now() + 60_000; // keep the panel in view while reading
+    return openVary(line, { text: sents[k], context: prev });
+  }
+  try {
+    const existing = findVideoFav(current.id, i, k);
+    if (existing) {
+      await removeFav(existing.id);
+      toast(t('fav.removedToast'));
+    } else {
+      await addVideoFav(current.id, i, k);
+      toast(t('fav.added'));
+    }
+  } catch (err) {
+    toast(`⚠️ ${err.message}`);
+  }
+}
+
+// Marks saved sentences (★) in the open video
+function updateFavMarks() {
+  if (!current) return;
+  [...els.subList.children].forEach((line, i) => {
+    let any = false;
+    line.querySelectorAll('.text .sent').forEach((span) => {
+      const on = !!findVideoFav(current.id, i, Number(span.dataset.k));
+      span.classList.toggle('fav', on);
+      any ||= on;
+    });
+    const btn = line.querySelector('.fav-btn');
+    if (btn) { btn.textContent = any ? '★' : '☆'; btn.classList.toggle('on', any); }
+  });
 }
 
 function applyColorSent() {
@@ -541,7 +613,9 @@ function renderLine(seg, i) {
     toggleLoop(i);
   });
 
-  row.append(time, text, replay);
+  const favBtn = el('button.card-btn.fav-btn', { text: '☆', title: t('card.fav'), 'aria-label': t('card.fav'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'fav'); } });
+  const varyBtn = el('button.card-btn.vary-btn', { text: '✨', title: t('card.vary'), 'aria-label': t('card.vary'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'vary'); } });
+  row.append(time, text, el('div.card-actions', {}, [favBtn, varyBtn, replay]));
   line.appendChild(row);
 
   const tr = document.createElement('div');
@@ -783,7 +857,69 @@ function fillSettings(firstRun) {
 
   els.stWhisper.textContent = settings.whisperModel ? t('settings.whisper', { name: settings.whisperModel }) : t('settings.whisperMissing');
   els.stTranslator.textContent = settings.translator.installed ? t('settings.translator') : t('settings.translatorMissing');
+  fillAI();
 }
+
+/* ---------- AI (Gemini) settings and level ---------- */
+function fillLevels() {
+  for (const select of [els.levelSelect, els.levelSelect2]) {
+    select.replaceChildren(...(settings.levels || ['A2', 'B1', 'B2', 'C1']).map((l) => new Option(l, l, false, l === (settings.level || 'B1'))));
+  }
+}
+
+function fillAI() {
+  const ai = settings.ai || {};
+  els.aiStatus.textContent = ai.source === 'env' ? t('settings.aiStatusEnv')
+    : ai.configured ? t('settings.aiStatusSaved', { hint: ai.keyHint }) : t('settings.aiStatusNone');
+  els.aiStatus.classList.toggle('ok', !!ai.configured);
+  els.aiKeyRemove.classList.toggle('hidden', ai.source !== 'settings');
+  els.aiTest.disabled = !ai.configured;
+  els.aiModelInput.value = ai.model || '';
+  fillLevels();
+}
+
+async function saveSetting(patch, okMessage = t('toast.saved')) {
+  try {
+    await api('/api/settings', { method: 'PUT', body: patch });
+    await loadSettings();
+    fillAI();
+    toast(okMessage);
+    return true;
+  } catch (err) {
+    toast(`⚠️ ${err.message}`);
+    return false;
+  }
+}
+
+async function changeLevel(level) {
+  if (await saveSetting({ level })) closeVary();
+}
+
+els.levelSelect.addEventListener('change', () => changeLevel(els.levelSelect.value));
+els.levelSelect2.addEventListener('change', () => changeLevel(els.levelSelect2.value));
+els.aiKeySave.addEventListener('click', async () => {
+  const key = els.aiKeyInput.value.trim();
+  if (!key) return els.aiKeyInput.focus();
+  if (await saveSetting({ geminiApiKey: key })) { els.aiKeyInput.value = ''; wordCache.clear(); }
+});
+els.aiKeyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.aiKeySave.click(); });
+els.aiKeyRemove.addEventListener('click', async () => { if (await saveSetting({ geminiApiKey: '' })) wordCache.clear(); });
+els.aiModelInput.addEventListener('change', () => saveSetting({ geminiModel: els.aiModelInput.value.trim() }));
+els.aiTest.addEventListener('click', async () => {
+  els.aiTest.disabled = true;
+  try {
+    const r = await api('/api/ai/test', { method: 'POST', body: {} });
+    toast(t('settings.aiTestOk', { model: r.model }), 3500);
+  } catch (err) {
+    toast(`⚠️ ${err.message}`, 5000);
+  } finally {
+    els.aiTest.disabled = !settings.ai?.configured;
+  }
+});
+document.addEventListener('app:open-settings', () => {
+  openSettings(false);
+  els.aiKeyInput.focus();
+});
 
 function openSettings(firstRun = false) {
   fillSettings(firstRun);
@@ -898,7 +1034,9 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (confirmResolve) return closeConfirm(false);
     closeWordPop();
+    closePickers();
     closeDrawer();
+    closeVary();
     if (!els.settings.classList.contains('hidden')) return closeSettings();
     return closeModal();
   }
@@ -984,7 +1122,22 @@ els.autoModeToggle.addEventListener('change', (e) => {
   playUntil = null;
   if (loopIndex !== -1) stopLoop();
 });
-document.addEventListener('click', (e) => { if (!e.target.closest('.w, .word-pop')) closeWordPop(); });
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.w, .word-pop')) closeWordPop();
+  if (!e.target.closest('.sent-pick, .card-btn')) closePickers();
+});
+
+// The main video and the clip player (favorites, library examples) never play at the same time
+document.addEventListener('clip:start', () => { stopLoop(); els.video.pause(); });
+els.video.addEventListener('play', () => stopClip());
+
+// ⭐ badge: how many saved sentences are due for review
+onFavoritesChange(() => {
+  const due = dueFavorites().length;
+  els.favBadge.textContent = String(due);
+  els.favBadge.classList.toggle('hidden', !due);
+  updateFavMarks();
+});
 
 els.video.addEventListener('timeupdate', () => {
   updateActive();
@@ -1016,7 +1169,10 @@ els.video.addEventListener('ratechange', () => { store('rate', els.video.playbac
 els.video.addEventListener('loadedmetadata', () => {
   if (!current) return;
   const pos = savedPos(current.id);
-  if (pos > 5 && pos < els.video.duration - 5) {
+  if (pendingSeek !== null) {
+    jumpTo(pendingSeek);
+    pendingSeek = null;
+  } else if (pos > 5 && pos < els.video.duration - 5) {
     els.video.currentTime = pos;
     toast(t('toast.resume', { t: fmtTime(pos) }));
   }
@@ -1065,6 +1221,8 @@ window.addEventListener('hashchange', route);
 window.addEventListener('beforeunload', () => savePos(true));
 
 await loadSettings();
+fillLevels();
+await loadFavorites();
 await loadProjects();
 await route();
 // First run: ask which language the translations should be in
