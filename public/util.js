@@ -76,4 +76,9 @@ export function highlightPattern(text) {
     .map((part) => (part.startsWith('[[') ? el('mark.pat', { text: part.slice(2, -2) }) : document.createTextNode(part)));
 }
 
+// replaceChildren that skips null / false / undefined (replaceChildren itself would print "null")
+export function setChildren(node, ...children) {
+  node.replaceChildren(...children.filter((c) => c !== null && c !== undefined && c !== false));
+}
+
 export const stripMarks = (text) => String(text).replace(/\[\[|\]\]/g, '');

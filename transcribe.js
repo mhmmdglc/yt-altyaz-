@@ -30,3 +30,22 @@ export async function analyzeAudio(videoPath, workBase, onStage = () => {}) {
     await unlink(json).catch(() => {});
   }
 }
+
+// Transcribes a short recording of the learner speaking (🎯 Study). Runs locally; nothing is uploaded.
+// Returns { text, silent }: silent recordings are detected first, because Whisper invents words for silence.
+export async function transcribeSpeech(inputFile, workBase) {
+  const model = findWhisperModel();
+  if (!model) throw Object.assign(new Error('No Whisper model found. Run: npm run setup'), { code: 'NO_WHISPER', status: 409 });
+  const wav = `${workBase}.wav`;
+  try {
+    await run(bin.ffmpeg, ['-y', '-i', inputFile, '-t', '30', '-ar', '16000', '-ac', '1', '-c:a', 'pcm_s16le', wav]);
+    const vol = await run(bin.ffmpeg, ['-nostats', '-i', wav, '-af', 'volumedetect', '-f', 'null', '-']);
+    const max = parseFloat(/max_volume:\s*(-?[\d.]+)/.exec(vol.err)?.[1] ?? '-91');
+    if (max < -45) return { text: '', silent: true };
+    const { out } = await run(bin.whisper, ['-m', model, '-f', wav, '-l', 'en', '-nt', '-np']);
+    const text = out.replace(/\[[^\]]*\]|\([^)]*\)/g, ' ').replace(/\s+/g, ' ').trim(); // drop [BLANK_AUDIO], (music)
+    return { text, silent: !text };
+  } finally {
+    await unlink(wav).catch(() => {});
+  }
+}

@@ -4,6 +4,7 @@ import { stopClip } from './clip.js';
 import { loadFavorites, dueFavorites, onFavoritesChange, findVideoFav, addVideoFav, removeFav } from './fav-store.js';
 import { openVary, closeVary } from './vary.js';
 import { renderFavorites, renderReview } from './favorites-view.js';
+import { renderStudy } from './study.js';
 
 const els = {
   projectList: $('#projectList'),
@@ -17,6 +18,7 @@ const els = {
   levelSelect2: $('#levelSelect2'),
   favoritesView: $('#favoritesView'),
   reviewView: $('#reviewView'),
+  studyView: $('#studyView'),
   aiStatus: $('#aiStatus'),
   aiKeyInput: $('#aiKeyInput'),
   aiKeySave: $('#aiKeySave'),
@@ -123,7 +125,7 @@ let leavePage = null; // cleanup of the favorites / review page
 function showView(name) {
   leavePage?.();
   leavePage = null;
-  const views = { empty: els.empty, home: els.home, workspace: els.workspace, favorites: els.favoritesView, review: els.reviewView };
+  const views = { empty: els.empty, home: els.home, workspace: els.workspace, favorites: els.favoritesView, review: els.reviewView, study: els.studyView };
   for (const [n, node] of Object.entries(views)) node.classList.toggle('hidden', n !== name);
   els.drawerBtn.classList.toggle('hidden', name !== 'workspace');
   els.favBtn.classList.toggle('active', name === 'favorites' || name === 'review');
@@ -133,7 +135,7 @@ function showView(name) {
     closeVary();
     savePos(true);
     els.video.pause();
-    document.title = `YT Altyazı — ${t(name === 'favorites' || name === 'review' ? 'fav.title' : 'home.title')}`;
+    document.title = `YT Altyazı — ${t(name === 'study' ? 'study.title' : name === 'favorites' || name === 'review' ? 'fav.title' : 'home.title')}`;
   }
 }
 
@@ -145,8 +147,26 @@ function go(hash) {
   else location.hash = hash;
 }
 
+// 🎯 Study works on one sentence; it is kept here while the study page is open
+let studySource = null;
+
+function openStudy(source) {
+  studySource = source;
+  go('#/study');
+}
+
 async function route() {
   const hash = location.hash;
+  if (hash.startsWith('#/study')) {
+    if (!studySource) return go('#/');
+    await Promise.all([loadProjects(), loadFavorites()]);
+    showView('study');
+    const back = studySource.back === 'favorites' || !studySource.projectId
+      ? { label: t('review.back'), href: '#/favorites' }
+      : { label: t('study.backVideo'), href: `#/v/${studySource.projectId}/t/${Number(studySource.start || 0).toFixed(2)}` };
+    leavePage = renderStudy(els.studyView, { source: studySource, back, hasProject });
+    return;
+  }
   if (hash.startsWith('#/favorites') || hash.startsWith('#/review')) {
     await Promise.all([loadProjects(), loadFavorites()]);
     const review = hash.startsWith('#/review');
@@ -536,7 +556,7 @@ function pickSentence(line, i, action) {
   const pop = el('div.sent-pick', { onclick: (e) => e.stopPropagation() }, [
     el('div.small.muted', { text: t('card.pick') }),
     ...sents.map((text, k) => el(`button.sent-pick-item.s.sc${k % SENT_COLORS}`, { onclick: () => { pop.remove(); runSentenceAction(line, i, k, action); } }, [
-      action === 'fav' ? (findVideoFav(current.id, i, k) ? '★ ' : '☆ ') : '✨ ', text
+      action === 'fav' ? (findVideoFav(current.id, i, k) ? '★ ' : '☆ ') : action === 'study' ? '🎯 ' : '✨ ', text
     ]))
   ]);
   line.appendChild(pop);
@@ -544,6 +564,7 @@ function pickSentence(line, i, action) {
 
 async function runSentenceAction(line, i, k, action) {
   const sents = sentencesOf(current.segments[i]);
+  if (action === 'study') return openStudy(studySourceOf(i, k));
   if (action === 'vary') {
     const prev = k > 0 ? sents[k - 1] : i > 0 ? sentencesOf(current.segments[i - 1]).at(-1) : '';
     manualScrollAt = Date.now() + 60_000; // keep the panel in view while reading
@@ -562,6 +583,34 @@ async function runSentenceAction(line, i, k, action) {
     toast(`⚠️ ${err.message}`);
   }
 }
+
+// Everything Study needs about sentence k of card i of the open video
+function studySourceOf(i, k) {
+  const seg = current.segments[i];
+  const sents = sentencesOf(seg);
+  const parts = seg.trParts?.length === sents.length ? seg.trParts : null;
+  return {
+    text: sents[k],
+    tr: parts ? parts[k] : sents.length === 1 ? seg.tr || '' : '',
+    context: k > 0 ? sents[k - 1] : i > 0 ? sentencesOf(current.segments[i - 1]).at(-1) : '',
+    projectId: current.id,
+    title: current.title,
+    start: seg.sentTimes?.[k]?.[0] ?? seg.start,
+    end: seg.sentTimes?.[k]?.[1] ?? seg.end
+  };
+}
+
+// "🎯" from the Vary panel or a favorite. A sentence of the open video keeps its audio and its way back.
+document.addEventListener('app:study', (e) => {
+  const d = e.detail || {};
+  if (!d.back && current && !els.workspace.classList.contains('hidden')) {
+    for (const [i, seg] of current.segments.entries()) {
+      const k = sentencesOf(seg).indexOf(d.text);
+      if (k >= 0) return openStudy(studySourceOf(i, k));
+    }
+  }
+  openStudy({ text: d.text, tr: d.tr || '', projectId: d.projectId || null, start: d.start, end: d.end, back: d.back || null });
+});
 
 // Marks saved sentences (★) in the open video
 function updateFavMarks() {
@@ -616,7 +665,8 @@ function renderLine(seg, i) {
 
   const favBtn = el('button.card-btn.fav-btn', { text: '☆', title: t('card.fav'), 'aria-label': t('card.fav'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'fav'); } });
   const varyBtn = el('button.card-btn.vary-btn', { text: '✨', title: t('card.vary'), 'aria-label': t('card.vary'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'vary'); } });
-  row.append(time, text, el('div.card-actions', {}, [favBtn, varyBtn, replay]));
+  const studyBtn = el('button.card-btn.study-btn', { text: '🎯', title: t('card.study'), 'aria-label': t('card.study'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'study'); } });
+  row.append(time, text, el('div.card-actions', {}, [favBtn, varyBtn, studyBtn, replay]));
   line.appendChild(row);
 
   const tr = document.createElement('div');

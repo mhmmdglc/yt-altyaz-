@@ -59,15 +59,26 @@ export async function playClip({ key, projectId, start, end, loop = false, onEnd
 }
 
 // Reads English text aloud with the browser's own speech (offline on most systems)
-export function speak(text, { key, onEnd } = {}) {
+// With loop: waits one second after each reading and reads again until stopped (shadowing).
+export function speak(text, { key, onEnd, loop = false, rate = 0.95 } = {}) {
   stopClip();
   if (!('speechSynthesis' in window)) return;
+  const my = ++token;
   current = { key, onEnd };
-  const u = new SpeechSynthesisUtterance(text);
-  u.lang = 'en-US';
-  u.rate = 0.95;
-  const voice = speechSynthesis.getVoices().find((v) => v.lang === 'en-US' && v.localService) || speechSynthesis.getVoices().find((v) => v.lang.startsWith('en'));
-  if (voice) u.voice = voice;
-  u.onend = () => { if (current?.key === key) { current = null; onEnd?.(); } };
-  speechSynthesis.speak(u);
+  const once = () => {
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = rate;
+    const voices = speechSynthesis.getVoices();
+    const voice = voices.find((v) => v.lang === 'en-US' && v.localService) || voices.find((v) => v.lang.startsWith('en'));
+    if (voice) u.voice = voice;
+    u.onend = async () => {
+      if (my !== token) return;
+      if (loop) { await sleep(1000); if (my === token) once(); return; }
+      current = null;
+      onEnd?.();
+    };
+    speechSynthesis.speak(u);
+  };
+  once();
 }

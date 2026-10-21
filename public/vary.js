@@ -1,6 +1,6 @@
 // "✨ Vary": the grammar pattern of a sentence, new example sentences in the same pattern, and real examples from your videos.
 import { t } from './i18n.js';
-import { api, el, toast, highlightPattern, stripMarks } from './util.js';
+import { api, el, toast, highlightPattern, stripMarks, setChildren } from './util.js';
 import { playClip, speak, stopClip, playingKey } from './clip.js';
 import { addExampleFav, addVideoFav, findExampleFav, findVideoFav } from './fav-store.js';
 
@@ -34,7 +34,7 @@ export async function openVary(container, { text, context = '' }) {
       return await api('/api/ai/vary', { method: 'POST', body: { text, context, more } });
     } catch (err) {
       if (open?.token !== state.token) return null;
-      body.replaceChildren(
+      setChildren(body,
         el('p.vary-error', { text: `⚠️ ${err.code === 'NO_AI_KEY' ? t('vary.needKey') : err.message}` }),
         ['NO_AI_KEY', 'AI_KEY_INVALID', 'AI_MODEL', 'NO_LANG'].includes(err.code)
           ? el('button.btn.btn-sm', { text: t('vary.openSettings'), onclick: openSettings }) : null
@@ -59,7 +59,11 @@ export async function openVary(container, { text, context = '' }) {
       el('div.vary-pattern', {}, [el('span.vary-label', { text: t('vary.title') }), el('strong', { text: d.pattern }), el('span.badge', { text: d.level })]),
       el('p.vary-explain', { text: d.explanation }),
       examples,
-      el('div.vary-actions', {}, [moreBtn, el('span.muted.small', { text: t('vary.aiNote') })]),
+      el('div.vary-actions', {}, [
+        moreBtn,
+        el('button.btn.btn-sm.btn-primary', { text: t('study.fromVary'), onclick: () => document.dispatchEvent(new CustomEvent('app:study', { detail: { text } })) }),
+        el('span.muted.small', { text: t('vary.aiNote') })
+      ]),
       libraryBlock(d.library || [])
     );
   }

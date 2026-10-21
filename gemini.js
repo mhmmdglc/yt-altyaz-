@@ -1,6 +1,7 @@
 // Optional AI features through the Google Gemini API: sentence variations ("Vary") and word meanings in context.
 // Only the sentence you act on is sent. Docs: docs/AI.md
 import { findLanguage } from './languages.js';
+import { tokens } from './public/speech-match.js';
 
 const BASE = process.env.GEMINI_API_BASE || 'https://generativelanguage.googleapis.com/v1beta';
 export const DEFAULT_MODEL = 'gemini-3.5-flash-lite';
@@ -117,4 +118,77 @@ export function wordPrompt({ word, sentence, lang, level = 'B1' }) {
 export async function wordInContext({ apiKey, model, word, sentence, lang, level }) {
   const out = await generateJSON({ apiKey, model, prompt: wordPrompt({ word, sentence, lang, level }), schema: WORD_SCHEMA, temperature: 0.2 });
   return { word, lemma: clean(out.lemma, 60), pos: clean(out.pos, 40), tr: clean(out.meaning, 120), note: clean(out.note, 300) };
+}
+
+/* ---------- 🎯 Study: a speaking ladder from the simplest core of the pattern up to the full sentence ---------- */
+
+// How many steps the ladder has at each level
+export const DRILL_STEPS = { A2: 8, B1: 12, B2: 14, C1: 15 };
+
+const DRILL_SCHEMA = {
+  type: 'OBJECT',
+  properties: {
+    pattern: { type: 'STRING' },
+    explanation: { type: 'STRING' },
+    steps: {
+      type: 'ARRAY',
+      items: {
+        type: 'OBJECT',
+        // English first, then its translation: generating in this order keeps the two sentences equivalent
+        properties: {
+          label: { type: 'STRING' },
+          en: { type: 'STRING' },
+          native: { type: 'STRING' },
+          alternatives: { type: 'ARRAY', items: { type: 'STRING' } },
+          hint: { type: 'STRING' }
+        },
+        propertyOrdering: ['label', 'en', 'native', 'alternatives', 'hint'],
+        required: ['label', 'en', 'native', 'alternatives', 'hint']
+      }
+    }
+  },
+  required: ['pattern', 'explanation', 'steps']
+};
+
+export function drillPrompt({ sentence, context = '', lang, level = 'B1' }) {
+  const language = languageName(lang);
+  const steps = DRILL_STEPS[level] || 12;
+  return [
+    `You are building a SPEAKING drill for a ${language}-speaking learner of English at CEFR level ${level}.`,
+    `The learner will see each sentence in ${language} and must SAY it in English out loud.`,
+    `Source sentence from a video: "${clean(sentence)}"`,
+    context ? `The sentence before it, for context only: "${clean(context)}"` : '',
+    '',
+    `Make a ladder of ${steps} steps that teaches the main pattern of the source sentence, from its simplest core up to the full sentence and a little beyond:`,
+    'core (shortest form) → change the subject (2 or 3 steps: I / you / he, she / we / they) → negative → question → add the place or object → add a detail (with someone, a time, a reason) → combine (e.g. negative + detail) → the source sentence itself or very close to it → 1 or 2 natural extensions.',
+    'Rules:',
+    `- Step 1 is the shortest core of the pattern: subject + verb only (for example "I'm going." / the ${language} equivalent), without the place or object.`,
+    '- Every step changes only one or two things compared to the previous one. No two steps may have the same English sentence.',
+    `- Write the English sentence of each step first; its ${language} sentence must then be a faithful, natural translation of exactly that English sentence (nothing added, nothing left out).`,
+    '- The English must be correct, natural, everyday English. Double-check subject–verb agreement, negatives and questions.',
+    `- Write ${language} with its proper alphabet and diacritics (for Turkish: ç, ğ, ı, İ, ö, ş, ü), natural word order and correct spelling.`,
+    '- Keep the meaning of the source sentence (e.g. if "going to" means movement to a place, do not turn it into the "going to" future).',
+    '',
+    'Return JSON:',
+    '- "pattern": the pattern as a short English template.',
+    `- "explanation": 1 or 2 short sentences in ${language} about the pattern.`,
+    `- "steps": each with "label" (1 or 2 correctly spelled words in ${language} naming what this step practises, e.g. the subject, negative, question), "en" (the most natural English, wrapping in [[double brackets]] the words that are new or changed compared to the previous step), "native" (the faithful ${language} translation of that English sentence, which the learner sees), "alternatives" (other correct English ways to say it, e.g. without contractions, no brackets; may be empty) and "hint" (1 to 3 English key words, not the whole answer).`
+  ].filter((l) => l !== '').join('\n');
+}
+
+export async function drill({ apiKey, model, sentence, context, lang, level }) {
+  const out = await generateJSON({ apiKey, model, prompt: drillPrompt({ sentence, context, lang, level }), schema: DRILL_SCHEMA, temperature: 0.6 });
+  const steps = (Array.isArray(out.steps) ? out.steps : [])
+    .map((s) => ({
+      label: clean(s.label, 40),
+      native: clean(s.native ?? s.tr, 300).replace(/\[\[|\]\]/g, ''),
+      en: clean(s.en, 300),
+      alternatives: (Array.isArray(s.alternatives) ? s.alternatives : []).map((a) => clean(a, 300).replace(/\[\[|\]\]/g, '')).filter(Boolean).slice(0, 5),
+      hint: clean(s.hint, 60).replace(/\[\[|\]\]/g, '')
+    }))
+    .filter((s) => s.native && s.en)
+    // drop repeated steps, also ones that only differ by a contraction ("I am" / "I'm")
+    .filter((s, i, all) => all.findIndex((x) => tokens(x.en).join(' ') === tokens(s.en).join(' ')) === i);
+  if (steps.length < 3) throw new AIError('AI_FAILED', 'Gemini returned too few steps.');
+  return { pattern: clean(out.pattern, 200), explanation: clean(out.explanation, 600), steps };
 }

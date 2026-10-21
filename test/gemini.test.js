@@ -85,3 +85,31 @@ test('word in context returns lemma, part of speech and meaning', async () => {
   const r = await wordInContext({ apiKey: 'k', word: 'trunks', sentence: 'Elephants have long trunks.', lang: 'tr' });
   assert.deepEqual(r, { word: 'trunks', lemma: 'trunk', pos: 'isim', tr: 'hortum', note: '' });
 });
+
+test('drill: prompt asks for a speaking ladder in the learner language; repeated steps are dropped', async () => {
+  seen.length = 0;
+  reply = () => answer({
+    pattern: 'be going to + place',
+    explanation: 'Açıklama.',
+    steps: [
+      { label: 'Temel', native: 'Gidiyorum.', en: "I'm [[going]].", alternatives: ['I am going.'], hint: 'going' },
+      { label: 'Kişi', native: 'Sen gidiyorsun.', en: "[[You're]] going.", alternatives: [], hint: "you're" },
+      { label: 'Tekrar', native: 'Gidiyorum.', en: 'I am going.', alternatives: [], hint: '' },
+      { label: 'Olumsuz', native: 'Gitmiyorum.', en: "I'm [[not]] going.", alternatives: ['I am not going.'], hint: 'not' }
+    ]
+  });
+  const { drill, drillPrompt } = await import('../gemini.js');
+  const r = await drill({ apiKey: 'k', sentence: "I'm going to Istanbul.", lang: 'tr', level: 'A2' });
+  const prompt = seen[0].body.contents[0].parts[0].text;
+  assert.match(prompt, /SPEAKING drill for a Turkish-speaking learner of English at CEFR level A2/);
+  assert.match(prompt, /ladder of 8 steps/);
+  assert.equal(r.steps.length, 3, 'the repeated core sentence is removed');
+  assert.deepEqual(r.steps.map((s) => s.label), ['Temel', 'Kişi', 'Olumsuz']);
+  assert.match(drillPrompt({ sentence: 'x', lang: 'tr', level: 'C1' }), /ladder of 15 steps/);
+});
+
+test('drill: too few steps is an error', async () => {
+  reply = () => answer({ pattern: 'p', explanation: 'e', steps: [{ label: 'a', native: 'b', en: 'c', alternatives: [], hint: '' }] });
+  const { drill } = await import('../gemini.js');
+  await assert.rejects(() => drill({ apiKey: 'k', sentence: 'x', lang: 'tr' }), (e) => e.code === 'AI_FAILED');
+});

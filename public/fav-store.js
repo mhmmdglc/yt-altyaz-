@@ -25,8 +25,9 @@ export async function addVideoFav(projectId, cardIndex, sentIndex) {
   return item;
 }
 
-export async function addExampleFav({ text, tr, pattern, source }) {
-  const item = await api('/api/favorites', { method: 'POST', body: { kind: 'example', text, tr, pattern, source } });
+// kind: 'example' (from ✨ Vary) or 'drill' (a 🎯 Study sentence, reviewed from your language to English)
+export async function addExampleFav({ kind = 'example', text, tr, pattern, source }) {
+  const item = await api('/api/favorites', { method: 'POST', body: { kind, text, tr, pattern, source } });
   await loadFavorites();
   return item;
 }

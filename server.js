@@ -1,10 +1,10 @@
 import express from 'express';
-import { mkdir, readFile, writeFile, readdir, rm } from 'node:fs/promises';
+import { mkdir, readFile, writeFile, readdir, rm, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import crypto from 'node:crypto';
 import { ROOT, HOST, PORT, DATA_DIR, WORK_DIR, TRANSLATOR, bin, isValidId, findWhisperModel } from './config.js';
 import { run } from './exec.js';
-import { analyzeAudio } from './transcribe.js';
+import { analyzeAudio, transcribeSpeech } from './transcribe.js';
 import { buildCards } from './segmenter.js';
 import { LANGUAGES, findLanguage } from './languages.js';
 import { openBrowser } from './open-browser.js';
@@ -381,6 +381,51 @@ app.post('/api/ai/vary', async (req, res) => {
   }
 });
 
+// POST /api/ai/drill { text, context?, fresh? } → { pattern, explanation, steps: [{ label, native, en, alternatives, hint }], level }
+// A speaking ladder for 🎯 Study. Cached per sentence, language and level; `fresh: true` makes a new set.
+app.post('/api/ai/drill', async (req, res) => {
+  const text = String(req.body?.text || '').trim();
+  const context = String(req.body?.context || '').trim().slice(0, 500);
+  if (!text || text.length > 400) return res.status(400).json({ error: 'Invalid sentence', code: 'BAD_TEXT' });
+  try {
+    const lang = await targetLang();
+    const ai = await aiConfig();
+    const level = levelOf(await readSettings());
+    const key = aiCache.keyOf(['drill', 2, lang, level, text]); // 2: English-first ladders (older ones are not reused)
+    let result = req.body?.fresh ? null : await aiCache.get(key);
+    if (!result) {
+      result = await gemini.drill({ apiKey: ai.apiKey, model: ai.model, sentence: text, context, lang, level });
+      await aiCache.set(key, result);
+    }
+    res.json({ ...result, level });
+  } catch (e) {
+    sendError(res, e);
+  }
+});
+
+/* ---------- Speech (🎯 Study): transcribe the learner locally with Whisper ---------- */
+
+let speechQueue = Promise.resolve(); // one recording at a time
+app.post('/api/speech', express.raw({ type: () => true, limit: '10mb' }), async (req, res) => {
+  if (!Buffer.isBuffer(req.body) || req.body.length < 200) return res.status(400).json({ error: 'No audio received', code: 'BAD_AUDIO' });
+  const base = path.join(WORK_DIR, `speech-${crypto.randomUUID()}`);
+  const job = speechQueue.then(async () => {
+    await mkdir(WORK_DIR, { recursive: true });
+    await writeFile(`${base}.input`, req.body);
+    try {
+      return await transcribeSpeech(`${base}.input`, base);
+    } finally {
+      await unlink(`${base}.input`).catch(() => {});
+    }
+  });
+  speechQueue = job.catch(() => {});
+  try {
+    res.json(await job);
+  } catch (e) {
+    sendError(res, e.code ? e : Object.assign(e, { status: 500, code: 'SPEECH_FAILED' }));
+  }
+});
+
 // Checks that the configured key and model work (used by the Settings dialog)
 app.post('/api/ai/test', async (_req, res) => {
   try {
@@ -407,11 +452,11 @@ app.get('/api/favorites', async (_req, res) => {
 app.post('/api/favorites', async (req, res) => {
   const b = req.body || {};
   try {
-    if (b.kind === 'example') {
+    if (b.kind === 'example' || b.kind === 'drill') {
       const text = String(b.text || '').trim();
       const tr = String(b.tr || '').trim();
       if (!text || text.length > 400 || tr.length > 600) return res.status(400).json({ error: 'Invalid example', code: 'BAD_TEXT' });
-      const item = await favorites.add({ kind: 'example', text, tr, lang: (await readSettings()).targetLang || null, pattern: String(b.pattern || '').slice(0, 200), source: String(b.source || '').slice(0, 400) });
+      const item = await favorites.add({ kind: b.kind, text, tr, lang: (await readSettings()).targetLang || null, pattern: String(b.pattern || '').slice(0, 200), source: String(b.source || '').slice(0, 400) });
       return res.json(item);
     }
     if (!isValidId(b.projectId) || !Number.isInteger(b.cardIndex) || !Number.isInteger(b.sentIndex)) return res.status(400).json({ error: 'Invalid sentence reference', code: 'BAD_TEXT' });

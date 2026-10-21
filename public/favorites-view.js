@@ -1,10 +1,11 @@
 // The ⭐ Favorites page and the 🧠 Review (spaced repetition) page.
 import { t, tn, getLang } from './i18n.js';
-import { el, fmtTime, toast } from './util.js';
+import { el, fmtTime, toast, setChildren } from './util.js';
 import { playClip, speak, stopClip, playingKey } from './clip.js';
 import { getFavorites, dueFavorites, removeFav, reviewFav, onFavoritesChange } from './fav-store.js';
 import { schedule, GRADES } from './srs.js';
 import { openVary, closeVary } from './vary.js';
+import { sayWidget } from './study.js';
 
 const lower = (s) => String(s || '').toLocaleLowerCase();
 
@@ -19,7 +20,8 @@ export function relativeTime(ms) {
 }
 
 function sourceLabel(item) {
-  return item.kind === 'video' ? `${item.title} · ${fmtTime(item.start)}` : t('fav.example', { pattern: item.pattern || '—' });
+  if (item.kind === 'video') return `${item.title} · ${fmtTime(item.start)}`;
+  return t(item.kind === 'drill' ? 'fav.drill' : 'fav.example', { pattern: item.pattern || '—' });
 }
 
 // ▶ listen (the original audio, or speech for examples) and 🔁 loop buttons for one favorite
@@ -31,10 +33,10 @@ function listenButtons(item, { hasProject, loop = true }) {
     btn.textContent = '⏹';
     const onEnd = () => { btn.textContent = icon; };
     if (canPlay) playClip({ key: key + withLoop, projectId: item.projectId, start: item.start, end: item.end, loop: withLoop, onEnd });
-    else speak(item.text, { key: key + withLoop, onEnd });
+    else speak(item.text, { key: key + withLoop, onEnd, loop: withLoop });
   };
   const playBtn = el('button.icon-btn', { text: '▶', title: t('fav.play'), 'aria-label': t('fav.play'), onclick: () => play(false, playBtn, '▶') });
-  const loopBtn = loop && canPlay ? el('button.icon-btn', { text: '🔁', title: t('fav.loop'), 'aria-label': t('fav.loop'), onclick: () => play(true, loopBtn, '🔁') }) : null;
+  const loopBtn = loop && (canPlay || item.kind === 'drill') ? el('button.icon-btn', { text: '🔁', title: t('fav.loop'), 'aria-label': t('fav.loop'), onclick: () => play(true, loopBtn, '🔁') }) : null;
   return { playBtn, loopBtn, autoplay: () => play(false, playBtn, '▶') };
 }
 
@@ -63,7 +65,7 @@ export function renderFavorites(root, { hasProject, openVideoAt }) {
     const li = el('li.fav-item');
     const { playBtn, loopBtn } = listenButtons(x, { hasProject });
     const missing = x.kind === 'video' && !hasProject(x.projectId);
-    li.append(
+    setChildren(li,
       el('div.fav-en', { text: x.text }),
       x.tr ? el('div.fav-tr', { text: x.tr }) : null,
       el('div.fav-meta', {}, [
@@ -72,6 +74,9 @@ export function renderFavorites(root, { hasProject, openVideoAt }) {
       ]),
       el('div.fav-actions', {}, [
         playBtn, loopBtn,
+        el('button.btn.btn-sm', { text: '🎯 ' + t('card.studyShort'), title: t('card.study'), onclick: () => document.dispatchEvent(new CustomEvent('app:study', { detail: {
+          text: x.text, tr: x.tr, projectId: x.kind === 'video' ? x.projectId : null, start: x.start, end: x.end, back: 'favorites'
+        } })) }),
         el('button.btn.btn-sm', { text: '✨ ' + t('card.varyShort'), title: t('card.vary'), onclick: () => openVary(li, { text: x.text }) }),
         x.kind === 'video' && !missing ? el('button.btn.btn-sm', { text: t('fav.open'), onclick: () => openVideoAt(x.projectId, x.start) }) : null,
         el('button.icon-btn.danger', { text: '🗑', title: t('fav.remove'), 'aria-label': t('fav.remove'), onclick: async () => {
@@ -129,6 +134,19 @@ export function renderReview(root, { hasProject }) {
     if (!current) return finish();
     const { playBtn, loopBtn, autoplay: ap } = listenButtons(current, { hasProject });
     autoplay = ap;
+    if (current.kind === 'drill') {
+      // Speaking direction: your language → say it in English → reveal and listen
+      const say = sayWidget({ expected: current.text, onResult: () => reveal() });
+      card.replaceChildren(
+        el('p.muted.small', { text: t('review.say') }),
+        el('div.review-en', { text: current.tr }),
+        el('div.review-listen', {}, [say.button]),
+        say.result,
+        el('div.review-back'),
+        el('button.btn.btn-primary.btn-lg.review-show', { text: t('review.show'), onclick: reveal })
+      );
+      return;
+    }
     card.replaceChildren(
       el('p.muted.small', { text: t('review.hint') }),
       el('div.review-en', { text: current.text }),
@@ -143,8 +161,11 @@ export function renderReview(root, { hasProject }) {
     revealed = true;
     const now = Date.now();
     card.querySelector('.review-show')?.remove();
-    card.querySelector('.review-back').replaceChildren(
-      el('div.review-tr', { text: current.tr || '—' }),
+    const drill = current.kind === 'drill';
+    const { playBtn, loopBtn } = listenButtons(current, { hasProject });
+    setChildren(card.querySelector('.review-back'),
+      el('div.review-tr', { text: (drill ? current.text : current.tr) || '—' }),
+      drill ? el('div.review-listen', {}, [playBtn, loopBtn]) : null,
       el('div.fav-meta', { text: sourceLabel(current) }),
       el('div.review-grades', {}, GRADES.map((g, i) => el(`button.btn.grade-${g}`, { onclick: () => grade(g) }, [
         el('strong', { text: t(`review.${g}`) }),
@@ -168,7 +189,7 @@ export function renderReview(root, { hasProject }) {
 
   function finish() {
     const upcoming = getFavorites().map((x) => x.review?.due ?? 0).filter((d) => d > Date.now()).sort((a, b) => a - b)[0];
-    card.replaceChildren(
+    setChildren(card,
       el('h2', { text: total ? t('review.doneTitle') : t('review.nothing') }),
       upcoming ? el('p.muted', { text: t('review.doneText', { when: relativeTime(upcoming - Date.now()) }) }) : null,
       el('a.btn', { href: '#/favorites', text: t('review.back') })

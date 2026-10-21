@@ -22,7 +22,7 @@ export function createFavorites(dataDir) {
         result = data.items.find((x) =>
           entry.kind === 'video'
             ? x.kind === 'video' && x.projectId === entry.projectId && x.cardIndex === entry.cardIndex && x.sentIndex === entry.sentIndex
-            : x.kind === 'example' && x.text === entry.text);
+            : x.kind === entry.kind && x.text === entry.text);
         if (result) return data;
         const now = Date.now();
         result = { id: crypto.randomUUID(), createdAt: new Date(now).toISOString(), ...entry, review: { reps: 0, interval: 0, ease: 2.5, lapses: 0, due: now } };

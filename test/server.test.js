@@ -253,3 +253,32 @@ test('favorites: save a video sentence with its own times, an example, review, e
   assert.equal((await request(srv.port, 'GET', '/api/favorites')).json.items.length, 1);
   assert.equal((await request(srv.port, 'DELETE', '/api/favorites/..%2F..')).status, 400);
 });
+
+test('speech endpoint rejects empty or tiny uploads (the transcription itself needs Whisper)', async () => {
+  const srv = await startServer();
+  const r = await request(srv.port, 'POST', '/api/speech', { headers: { 'Content-Type': 'audio/webm' }, body: undefined });
+  assert.equal(r.status, 400);
+  assert.equal(r.json.code, 'BAD_AUDIO');
+});
+
+test('drill endpoint caches its ladder and favorites accept speaking sentences', async () => {
+  const srv = await startServer();
+  await request(srv.port, 'PUT', '/api/settings', { body: { targetLang: 'tr', geminiApiKey: KEY } });
+  geminiCalls.length = 0;
+  geminiReply = () => ({ status: 200, obj: { pattern: 'p', explanation: 'e', steps: [
+    { label: 'a', native: 'Gidiyorum.', en: "I'm going.", alternatives: [], hint: '' },
+    { label: 'b', native: 'Gidiyorsun.', en: "You're going.", alternatives: [], hint: '' },
+    { label: 'c', native: 'Gitmiyorum.', en: "I'm not going.", alternatives: [], hint: '' }
+  ] } });
+  const first = await request(srv.port, 'POST', '/api/ai/drill', { body: { text: "I'm going to Istanbul." } });
+  assert.equal(first.json.steps.length, 3);
+  await request(srv.port, 'POST', '/api/ai/drill', { body: { text: "I'm going to Istanbul." } });
+  assert.equal(geminiCalls.length, 1, 'cached');
+  await request(srv.port, 'POST', '/api/ai/drill', { body: { text: "I'm going to Istanbul.", fresh: true } });
+  assert.equal(geminiCalls.length, 2, 'a new set asks again');
+
+  const fav = await request(srv.port, 'POST', '/api/favorites', { body: { kind: 'drill', text: "I'm not going.", tr: 'Gitmiyorum.', pattern: 'p' } });
+  assert.equal(fav.json.kind, 'drill');
+  const again = await request(srv.port, 'POST', '/api/favorites', { body: { kind: 'drill', text: "I'm not going.", tr: 'Gitmiyorum.' } });
+  assert.equal(again.json.id, fav.json.id);
+});

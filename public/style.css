@@ -926,3 +926,38 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
   #drawerBtn::before { content: '☰'; font-size: 18px; }
   #newBtn, #drawerBtn, #favBtn { padding: 8px 11px; }
 }
+
+/* ---------- 🎯 Study ---------- */
+.study { max-width: 900px; margin: 0 auto; }
+.study-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; }
+.study-source { flex: 1; min-width: 0; }
+.study-source-en { font-size: 18px; font-weight: 600; line-height: 1.45; }
+.study-source-tr { font-size: 14px; color: #7dd3fc; margin-top: 2px; }
+.study-info { margin-bottom: 8px; }
+.study-tools { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; }
+.study-body { display: flex; flex-direction: column; gap: 12px; }
+.step { padding: 14px 16px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--panel); transition: border-color 0.15s ease; }
+.step.g-known { border-color: rgba(52, 211, 153, 0.55); }
+.step.g-missed { border-color: rgba(248, 113, 113, 0.55); }
+.step-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.chip { font-size: 11.5px; font-weight: 700; padding: 2px 9px; border-radius: 999px; background: rgba(168, 85, 247, 0.18); color: #d8b4fe; border: 1px solid rgba(168, 85, 247, 0.35); }
+.step-native { font-size: 20px; font-weight: 600; line-height: 1.45; }
+.step-en { margin-top: 8px; font-size: 17px; line-height: 1.5; color: var(--text); padding: 6px 10px; border-radius: 8px; background: rgba(255, 255, 255, 0.04); transition: filter 0.2s ease; }
+.step-en.blur { filter: blur(7px); cursor: pointer; user-select: none; }
+.step-en.blur:hover { filter: blur(5px); }
+.step-hint { margin-top: 6px; font-size: 14px; color: #fcd34d; }
+.step-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.grade-btn.on { background: rgba(99, 102, 241, 0.3); border-color: var(--accent); }
+.say-btn { background: rgba(34, 211, 238, 0.12); border-color: rgba(34, 211, 238, 0.45); }
+.say-btn.recording { background: rgba(248, 113, 113, 0.25); border-color: #f87171; animation: pulse 1s ease-in-out infinite; }
+@keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(248, 113, 113, 0.15); } }
+.say-result:empty { display: none; }
+.say-result { margin-top: 8px; font-size: 14px; display: flex; flex-direction: column; gap: 2px; }
+.say-heard { color: var(--muted); }
+.v-good { color: var(--ok); font-weight: 600; }
+.v-close { color: #fcd34d; font-weight: 600; }
+.v-wrong, .say-bad { color: #fca5a5; font-weight: 600; }
+.single-nav { display: flex; align-items: center; justify-content: space-between; }
+.study-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 18px 0 6px; padding: 12px 14px; border-radius: 12px; background: rgba(99, 102, 241, 0.08); }
+.study-summary:empty { display: none; }
+.study-privacy { margin-top: 10px; }
