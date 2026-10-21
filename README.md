@@ -29,11 +29,13 @@ It is made for people who learn English by watching: talks, lectures, interviews
 
 - 🧩 **Sentence-accurate cards.** A card holds one or a few *whole* sentences, never half of one. Start and end times are snapped to the real pauses in the audio, so the first word is not clipped and the next sentence does not leak in. ([how](docs/SUBTITLE-CARDS.md))
 - 🌍 **Translation into 37 languages**, made on your computer by [HY-MT1.5](https://huggingface.co/tencent/HY-MT1.5-1.8B). Each English sentence and its translation share one colour, so you always see what matches what.
-- 👆 **Click any word** to see its meaning in your language.
+- 👆 **Click any word** to see its meaning in your language (with the optional Gemini key: the meaning that fits *this* sentence).
 - 🔁 **Shadowing mode.** Press 🔁 on a card: it plays the sentence, waits one second and plays it again, until you stop it.
+- ⭐ **Favorites and review.** Save any sentence and review your sentences with spaced repetition: listen, say it, reveal the translation, rate yourself. Export them for Anki.
+- ✨ **Vary** *(optional, Gemini)*: finds the grammar pattern of a sentence, explains it in your language and writes new example sentences with the same pattern at your level (A2–C1), and shows **real sentences with the same pattern from your other videos**, playable with their original audio.
 - 📖 **Text-only mode** (`V`): hide the video and work with the text; a small player bar keeps the audio under control.
 - ⏯ Resume where you stopped, 0.75×–1.5× speed, search, keyboard shortcuts.
-- 🔒 **Private and offline** after the one-time model download.
+- 🔒 **Private and offline** after the one-time model download. The AI features are optional and send only the sentence you act on.
 - 🗣 Interface in **English** and **Türkçe** (adding a language is one small file).
 
 <table>
@@ -51,20 +53,21 @@ Many good tools exist for learning from video. They make different trade-offs, a
 |---|---|---|---|---|
 | **Cost** | Free, open source (MIT) | Free tiers plus paid plans | Subscription | Free |
 | **Account** | None | Usually | Yes | None |
-| **Where your data goes** | Nowhere: everything runs locally | Page and translation services in the cloud | Their servers | Local |
+| **Where your data goes** | Stays on your computer; the optional AI features send only the sentence you act on | Page and translation services in the cloud | Their servers | Local |
 | **Content** | Any video you can download | Whatever plays in your browser, including streaming services | Their curated library | Anything |
 | **Subtitle lines** | Rebuilt into whole-sentence cards with audio-accurate timing | The subtitle lines the site provides | Curated by the service | You build them |
 | **Translation** | Local AI model, 37 languages | Cloud translation services | Included for their content | You build it |
-| **Word lookup** | Yes, translated on your computer | Yes | Yes | No |
+| **Word lookup** | Yes; with the optional Gemini key it fits the sentence | Yes | Yes | No |
+| **Grammar patterns and new examples** | ✨ Vary (optional Gemini) + real examples from your own videos | Varies | Lessons, in some | No |
 | **Shadowing loop** | Built in | Varies | Varies | Player scripts |
-| **Flashcards / spaced repetition** | **No** | Yes (e.g. Migaku, with Anki export) | Yes, in some | No |
+| **Flashcards / spaced repetition** | Favorites with spaced-repetition review; text export for Anki | Yes (e.g. Migaku: cards with screenshot and audio, Anki export) | Yes, in some | No |
 | **Setup** | Command line + about 1.5–3.5 GB of models | Install an extension | None | A lot |
 
 *Based on the products' public descriptions in October 2026; they change, so check their sites for current details.*
 
 **Choose YT Altyazı if** you care about privacy or want it all offline, you want to study from videos *you* choose (including your own downloads), you practise shadowing, or you want something free that you can inspect and change.
 
-**Choose something else if** you mainly watch **Netflix or other streaming services** (this app only works with videos it can download), you need **flashcards and spaced repetition**, your target language is **not English**, you want a **curated course**, or you do not want to use a command line.
+**Choose something else if** you mainly watch **Netflix or other streaming services** (this app only works with videos it can download), you want a **full flashcard system** with screenshots and audio on every card, your target language is **not English**, you want a **curated course**, or you do not want to use a command line.
 
 ## Quick start
 
@@ -127,6 +130,25 @@ Press `V` (or **🙈 Hide**) to hide the video. The panel gets wider and a small
 
 <img src="docs/img/settings.png" alt="The settings dialog" width="560"/>
 
+### 6. Save sentences and review them
+
+Press ☆ on a card to save a sentence (on a card with several sentences you pick which one). **⭐ Favorites** lists everything you saved: listen to the original audio, repeat it, jump back to that moment in the video, or export the list for Anki (`File → Import`, tab-separated).
+
+**🧠 Review** shows the sentences that are due: listen, say it yourself, think of the meaning, reveal the translation and rate yourself (*Again · Hard · Good · Easy*). Sentences you know come back less often; difficult ones come back sooner. The ⭐ button shows how many are due.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/img/favorites.png" alt="The Favorites page"/><br/><sub><b>Favorites:</b> listen, repeat, jump back to the video, export.</sub></td>
+<td width="50%"><img src="docs/img/review.png" alt="Review with spaced repetition"/><br/><sub><b>Review:</b> each button shows when the sentence comes back.</sub></td>
+</tr>
+</table>
+
+### 7. Vary a sentence (optional, Gemini)
+
+Press ✨ on a card. You get the grammar pattern of the sentence, a short explanation in your language, and new example sentences with the same pattern at your level (pattern words highlighted, 🔊 to hear them, ☆ to save them); **＋ More examples** writes new ones. Below them are **real sentences with the same pattern from your other videos**, which you can play with their original audio.
+
+Choose your level (A2, B1, B2, C1) in the top bar. Vary needs a free Gemini API key: [docs/AI.md](docs/AI.md) explains how to add one, what is sent and what it costs.
+
 ### Keyboard shortcuts
 
 | Key | Action |
@@ -136,6 +158,7 @@ Press `V` (or **🙈 Hide**) to hide the video. The panel gets wider and a small
 | `↑` / `↓` | previous / next card |
 | `V` | hide / show the video |
 | `Esc` | close a popup, the video list or a dialog |
+| `Space`, `1`–`4` | in Review: reveal the translation, then rate *Again / Hard / Good / Easy* |
 
 More detail: [docs/USAGE.md](docs/USAGE.md).
 
@@ -172,18 +195,20 @@ Whisper's own subtitle segments often end in the middle of a sentence, and trans
 
 **Where is my data?** In the `data/` folder of the project. Copy it to back it up; delete a video in the app (🗑) to remove it.
 
-**Does it send anything anywhere?** No. The app listens on `127.0.0.1` only. Network access is used to download the models and the videos you ask for, and to show YouTube thumbnails on the home screen.
+**Does it send anything anywhere?** Not unless you turn on the AI features. The app listens on `127.0.0.1` only; network access is used to download the models and the videos you ask for, and to show YouTube thumbnails on the home screen. If you add a Gemini key, the sentence you ✨ Vary, or the sentence of a word you click, is sent to Google's Gemini API, nothing else. On Gemini's free tier Google may use what you send to improve its products ([docs/AI.md](docs/AI.md)).
+
+**Do I need a Gemini key?** No. Everything except ✨ Vary works without it; word meanings then come from the local model.
 
 ## Known limitations and ideas
 
-- English-only source language; no flashcards or spaced repetition; links only (no local file import yet).
+- English-only source language; links only (no local file import yet); the Anki export is text-only (no audio clips).
 - Linux and Windows are untested end-to-end.
 - Very long sentences (a speaker chaining 30 seconds with commas) stay on one long card by design.
 - Ideas: local-file import, Anki export, more interface languages, other translation backends. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Privacy and responsible use
 
-- Nothing is uploaded. The app rejects requests from other web pages and only serves your own computer.
+- Nothing is uploaded unless you turn on the AI features, and then only the sentence you act on. The app rejects requests from other web pages and only serves your own computer.
 - Videos are downloaded by yt-dlp. **Respect the terms of the sites you download from and the copyright of the videos.** This tool is meant for personal study; do not redistribute downloaded videos or transcripts.
 - Machine transcription and translation make mistakes.
 
@@ -194,6 +219,7 @@ Whisper's own subtitle segments often end in the middle of a sentence, and trans
 | [docs/INSTALL.md](docs/INSTALL.md) | Installing on macOS, Linux and Windows; troubleshooting |
 | [docs/USAGE.md](docs/USAGE.md) | Every feature, shortcuts, tips |
 | [docs/TRANSLATION.md](docs/TRANSLATION.md) | The translation model: setup, license, using it from other programs |
+| [docs/AI.md](docs/AI.md) | Optional Gemini features: key, privacy, cost, models |
 | [docs/SUBTITLE-CARDS.md](docs/SUBTITLE-CARDS.md) | How cards and timings are made, and how to tune them |
 | [docs/CONFIGURATION.md](docs/CONFIGURATION.md) | Environment variables, folders, files |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Code layout, data format, HTTP API |

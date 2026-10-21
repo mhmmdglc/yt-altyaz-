@@ -2,6 +2,21 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] - 2026-10-21
+
+### Added
+- **Favorites**: save any sentence (on multi-sentence cards you pick which one); a Favorites page to listen to the original audio, repeat it, jump back to the video, and export a tab-separated file for Anki.
+- **Review** with spaced repetition (a simplified SM-2): listen, say it, reveal the translation, rate *Again / Hard / Good / Easy*; the ⭐ button shows how many sentences are due.
+- **✨ Vary** (optional, Gemini API): the grammar pattern of a sentence, a short explanation in your language, new example sentences at your level with the pattern highlighted, read-aloud and save buttons, and real sentences with the same pattern from your own videos, playable with their original audio.
+- **Word meanings in context** (optional, Gemini): the meaning that fits the sentence, with the dictionary form, part of speech and a usage note; falls back to the local model.
+- **Level** (A2, B1, B2, C1; default B1) in the top bar and in Settings.
+- Settings for the Gemini key (stored locally, never sent to the browser) and model, with a connection test.
+- Per-sentence times in every card (`sentTimes`).
+
+### Changed
+- `npm run regroup` keeps the translations of cards whose text did not change.
+- Compact top bar on narrow screens.
+
 ## [1.0.0] - 2026-10-20
 
 First public release.

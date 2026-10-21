@@ -29,11 +29,13 @@ Sonra onunla çalışırsın: izlerken okursun, bir kelimeye tıklayıp anlamın
 
 - 🧩 **Cümle bölünmeyen kartlar.** Bir kart bir ya da birkaç *tam* cümle içerir, hiçbir cümlenin yarısını değil. Başlangıç ve bitişler sesteki gerçek duraklamalara oturtulur: ilk kelime kesilmez, sonraki cümle araya sızmaz. ([nasıl](docs/SUBTITLE-CARDS.md))
 - 🌍 **37 dile çeviri**, bilgisayarında [HY-MT1.5](https://huggingface.co/tencent/HY-MT1.5-1.8B) ile. Her İngilizce cümle ile çevirisi aynı renkte görünür, neyin neyle eşleştiği hep belli.
-- 👆 **Herhangi bir kelimeye tıkla**, anlamını kendi dilinde gör.
+- 👆 **Herhangi bir kelimeye tıkla**, anlamını kendi dilinde gör (opsiyonel Gemini anahtarıyla: *o cümleye* uyan anlamı).
 - 🔁 **Shadowing modu.** Bir kartta 🔁'ye bas: cümle çalar, 1 sn bekler, sen durdurana kadar tekrar çalar.
+- ⭐ **Favoriler ve tekrar.** İstediğin cümleyi kaydet, aralıklı tekrarla çalış: dinle, söyle, çeviriyi aç, kendini değerlendir. Anki'ye aktarabilirsin.
+- ✨ **Çeşitle** *(opsiyonel, Gemini)*: cümlenin gramer kalıbını bulur, kendi dilinde açıklar, seviyene göre (A2–C1) aynı kalıpla yeni örnek cümleler yazar ve **diğer videolarından aynı kalıbı kullanan gerçek cümleleri** orijinal sesiyle gösterir.
 - 📖 **Yalnız metin modu** (`V`): videoyu gizle, metinle çalış; küçük oynatıcı çubuğu sesi yönetir.
 - ⏯ Kaldığın yerden devam, 0,75×–1,5× hız, arama, klavye kısayolları.
-- 🔒 Tek seferlik model indirmesinden sonra **gizli ve çevrimdışı**.
+- 🔒 Tek seferlik model indirmesinden sonra **gizli ve çevrimdışı**. Yapay zekâ özellikleri isteğe bağlıdır ve yalnızca üzerinde çalıştığın cümleyi gönderir.
 - 🗣 Arayüz **Türkçe** ve **English** (yeni dil eklemek tek küçük bir dosya).
 
 <table>
@@ -51,20 +53,21 @@ Videodan öğrenmek için pek çok iyi araç var. Hepsi farklı tercihler yapıy
 |---|---|---|---|---|
 | **Ücret** | Ücretsiz, açık kaynak (MIT) | Ücretsiz katman + ücretli planlar | Abonelik | Ücretsiz |
 | **Hesap** | Yok | Genelde var | Var | Yok |
-| **Verilerin nereye gider** | Hiçbir yere: her şey yerelde | Bulutta sayfa ve çeviri servisleri | Onların sunucuları | Yerel |
+| **Verilerin nereye gider** | Bilgisayarında kalır; opsiyonel yapay zekâ özellikleri yalnızca üzerinde çalıştığın cümleyi gönderir | Bulutta sayfa ve çeviri servisleri | Onların sunucuları | Yerel |
 | **İçerik** | İndirebildiğin her video | Tarayıcında oynayan her şey, yayın servisleri dahil | Kendi seçili kütüphaneleri | Her şey |
 | **Altyazı satırları** | Ses doğruluğunda zamanlı, tam cümle kartlarına yeniden kurulur | Sitenin verdiği altyazı satırları | Servisin hazırladığı altyazılar | Sen kurarsın |
 | **Çeviri** | Yerel yapay zekâ, 37 dil | Bulut çeviri servisleri | Kendi içerikleri için dahil | Sen kurarsın |
-| **Kelime anlamı** | Var, bilgisayarında çevrilir | Var | Var | Yok |
+| **Kelime anlamı** | Var; opsiyonel Gemini anahtarıyla cümleye uygun | Var | Var | Yok |
+| **Gramer kalıbı ve yeni örnekler** | ✨ Çeşitle (opsiyonel Gemini) + kendi videolarından gerçek örnekler | Değişir | Bazılarında ders olarak | Yok |
 | **Shadowing döngüsü** | Hazır | Değişir | Değişir | Oynatıcı betikleri |
-| **Flashcard / aralıklı tekrar** | **Yok** | Var (ör. Migaku, Anki'ye aktarımla) | Bazılarında var | Yok |
+| **Flashcard / aralıklı tekrar** | Favorilerde aralıklı tekrar; Anki için metin aktarımı | Var (ör. Migaku: ekran görüntüsü ve sesli kartlar, Anki'ye aktarım) | Bazılarında var | Yok |
 | **Kurulum** | Komut satırı + yaklaşık 1,5–3,5 GB model | Eklenti kur | Yok | Çok |
 
 *Ürünlerin Ekim 2026'daki herkese açık tanıtımlarına dayanır; değişebilir, güncel bilgi için sitelerine bak.*
 
 **YT Altyazı'yı seç:** gizlilik senin için önemliyse ya da her şeyin çevrimdışı olmasını istiyorsan, *kendi seçtiğin* videolardan (kendi indirdiklerin dahil) çalışmak istiyorsan, shadowing yapıyorsan ya da incelemek ve değiştirmek istediğin ücretsiz bir araç arıyorsan.
 
-**Başka bir şey seç:** ağırlıklı olarak **Netflix ve diğer yayın servislerini** izliyorsan (bu uygulama yalnızca indirebildiği videolarla çalışır), **flashcard ve aralıklı tekrar** istiyorsan, hedef dilin **İngilizce değilse**, **hazır bir kurs** istiyorsan ya da komut satırı kullanmak istemiyorsan.
+**Başka bir şey seç:** ağırlıklı olarak **Netflix ve diğer yayın servislerini** izliyorsan (bu uygulama yalnızca indirebildiği videolarla çalışır), her kartında ekran görüntüsü ve ses olan **tam bir flashcard sistemi** istiyorsan, hedef dilin **İngilizce değilse**, **hazır bir kurs** istiyorsan ya da komut satırı kullanmak istemiyorsan.
 
 ## Hızlı başlangıç
 
@@ -127,6 +130,25 @@ Videoyu gizlemek için `V`'ye bas (ya da **🙈 Gizle**). Panel genişler, küç
 
 <img src="docs/img/settings.png" alt="Ayarlar penceresi" width="560"/>
 
+### 6. Cümleleri kaydet ve tekrar et
+
+Bir cümleyi kaydetmek için karttaki ☆'ye bas (birden çok cümleli kartta hangisini istediğini seçersin). **⭐ Favoriler** kaydettiğin her şeyi listeler: orijinal sesini dinle, tekrarla, videoda o ana dön ya da listeyi Anki için dışa aktar (`Dosya → İçe Aktar`, sekmeyle ayrılmış).
+
+**🧠 Tekrar et** sırası gelen cümleleri gösterir: dinle, kendin söyle, anlamını düşün, çeviriyi aç ve kendini değerlendir (*Tekrar · Zor · İyi · Kolay*). Bildiğin cümleler daha seyrek, zorlandıkların daha sık gelir. ⭐ düğmesi kaç cümlenin sırası geldiğini gösterir.
+
+<table>
+<tr>
+<td width="50%"><img src="docs/img/favorites-tr.png" alt="Favoriler sayfası"/><br/><sub><b>Favoriler:</b> dinle, tekrarla, videoya dön, dışa aktar.</sub></td>
+<td width="50%"><img src="docs/img/review-tr.png" alt="Aralıklı tekrar ekranı"/><br/><sub><b>Tekrar:</b> her düğme cümlenin ne zaman geri geleceğini gösterir.</sub></td>
+</tr>
+</table>
+
+### 7. Bir cümleyi çeşitle (opsiyonel, Gemini)
+
+Bir kartta ✨'e bas. Cümlenin gramer kalıbı, kendi dilinde kısa bir açıklama ve seviyene uygun, aynı kalıpla yazılmış yeni örnek cümleler gelir (kalıp kelimeleri vurgulu, 🔊 ile dinle, ☆ ile kaydet). **＋ Daha fazla örnek** yenilerini yazar. Altında **diğer videolarından aynı kalıbı kullanan gerçek cümleler** var, orijinal sesleriyle dinleyebilirsin.
+
+Seviyeni (A2, B1, B2, C1) üst menüden seç. Çeşitle ücretsiz bir Gemini API anahtarı ister: nasıl ekleneceği, neyin gönderildiği ve ücreti [docs/AI.md](docs/AI.md) içinde (İngilizce).
+
 ### Klavye kısayolları
 
 | Tuş | İşlev |
@@ -136,6 +158,7 @@ Videoyu gizlemek için `V`'ye bas (ya da **🙈 Gizle**). Panel genişler, küç
 | `↑` / `↓` | önceki / sonraki kart |
 | `V` | videoyu gizle / göster |
 | `Esc` | pencereyi / listeyi kapat |
+| `Space`, `1`–`4` | Tekrar ekranında: çeviriyi aç, sonra *Tekrar / Zor / İyi / Kolay* |
 
 Daha fazla ayrıntı: [docs/USAGE.md](docs/USAGE.md) (İngilizce).
 
@@ -174,24 +197,26 @@ Whisper'ın kendi altyazı parçaları çoğu zaman cümlenin ortasında biter v
 
 **Verilerim nerede?** Projenin `data/` klasöründe. Yedeklemek için kopyala; bir videoyu silmek için uygulamada 🗑'ye bas.
 
-**Bir yere bir şey gönderiyor mu?** Hayır. Uygulama yalnızca `127.0.0.1` üzerinde dinler. İnternet; modelleri, istediğin videoları indirmek ve ana ekranda YouTube kapak resimlerini göstermek için kullanılır.
+**Bir yere bir şey gönderiyor mu?** Yapay zekâ özelliklerini açmadıkça hayır. Uygulama yalnızca `127.0.0.1` üzerinde dinler; internet modelleri, istediğin videoları indirmek ve ana ekranda YouTube kapak resimlerini göstermek için kullanılır. Gemini anahtarı eklersen yalnızca ✨ Çeşitle dediğin cümle ya da tıkladığın kelimenin cümlesi Google'ın Gemini API'sine gider. Gemini'nin ücretsiz katmanında Google gönderdiklerini ürünlerini geliştirmek için kullanabilir ([docs/AI.md](docs/AI.md)).
+
+**Gemini anahtarı şart mı?** Hayır. ✨ Çeşitle dışındaki her şey anahtarsız çalışır; kelime anlamları o zaman yerel modelden gelir.
 
 ## Bilinen sınırlar ve fikirler
 
-- Kaynak dil yalnızca İngilizce; flashcard ya da aralıklı tekrar yok; yalnızca link (henüz yerel dosya yok).
+- Kaynak dil yalnızca İngilizce; yalnızca link (henüz yerel dosya yok); Anki aktarımı yalnızca metin (ses klibi yok).
 - Linux ve Windows uçtan uca denenmedi.
 - Çok uzun cümleler (konuşmacının virgüllerle 30 saniye zincirlediği cümle) bilerek tek uzun kartta kalır.
 - Fikirler: yerel dosya içe aktarma, Anki'ye aktarma, daha çok arayüz dili, başka çeviri modelleri. Bkz. [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Gizlilik ve sorumlu kullanım
 
-- Hiçbir şey yüklenmez. Uygulama başka web sayfalarından gelen istekleri reddeder ve yalnızca kendi bilgisayarına hizmet eder.
+- Yapay zekâ özelliklerini açmadıkça hiçbir şey yüklenmez; açarsan yalnızca üzerinde çalıştığın cümle gider. Uygulama başka web sayfalarından gelen istekleri reddeder ve yalnızca kendi bilgisayarına hizmet eder.
 - Videoları yt-dlp indirir. **İndirdiğin sitelerin kullanım koşullarına ve videoların telif haklarına saygı göster.** Araç kişisel çalışma içindir; indirilen videoları ya da metinleri yeniden dağıtma.
 - Makine transkripsiyonu ve çevirisi hata yapar.
 
 ## Dokümantasyon
 
-Ayrıntılı belgeler İngilizce: [kurulum](docs/INSTALL.md) · [kullanım](docs/USAGE.md) · [çeviri modeli](docs/TRANSLATION.md) · [altyazı kartları](docs/SUBTITLE-CARDS.md) · [yapılandırma](docs/CONFIGURATION.md) · [mimari](docs/ARCHITECTURE.md) · [değişiklikler](CHANGELOG.md).
+Ayrıntılı belgeler İngilizce: [kurulum](docs/INSTALL.md) · [kullanım](docs/USAGE.md) · [çeviri modeli](docs/TRANSLATION.md) · [yapay zekâ (Gemini)](docs/AI.md) · [altyazı kartları](docs/SUBTITLE-CARDS.md) · [yapılandırma](docs/CONFIGURATION.md) · [mimari](docs/ARCHITECTURE.md) · [değişiklikler](CHANGELOG.md).
 
 ## Katkı ve lisans
 

@@ -50,7 +50,7 @@ Sentences are added to a card in order, as long as **all** of these hold:
 
 A single sentence that is longer than these limits **keeps its own card and is not split**. Speakers sometimes chain 300–500 characters (up to 30 seconds) into one sentence with commas; such cards are long, by design.
 
-Each card is stored as `{ start, end, text, sents: [sentence, …] }`. `sents` is the exact sentence list used for colours and for translation.
+Each card is stored as `{ start, end, text, sents: [sentence, …], sentTimes: [[start, end], …] }`. `sents` is the exact sentence list used for colours and for translation; `sentTimes` gives every sentence its own padded, non-overlapping time range, so a single sentence can be saved to favorites and played on its own.
 
 ## Recordings without punctuation
 
@@ -73,7 +73,7 @@ npm run regroup -- all --no-translate  # do not translate afterwards
 ```
 
 - The first time, the previous version of `project.json` is saved as `data/<id>/segments.whisper.json` (your way back; never overwritten later).
-- Cards change, so translations are invalidated; the script asks the running app to translate again (if the app is not running it tells you to open it and press **Translate**).
+- Translations of cards whose text did not change are **kept**; only new or changed cards are translated (the script asks the running app; if it is not running, open the app and press **Translate**).
 - Speed: about 8–11× real time on Apple silicon with `medium.en` (a 5.8-minute video takes ~30 s, a 19-minute one ~65 s).
 
 ### Tuning

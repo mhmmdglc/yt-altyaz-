@@ -37,6 +37,9 @@ Starting the app with `npm start` opens your browser. `npm run dev` (restarts on
 | `HYMT_PARALLEL` | `4` | Parallel requests the translation server handles |
 | `HYMT_URL` | `http://127.0.0.1:$HYMT_PORT` | Use a translation server that is already running elsewhere |
 | `HYMT_STATE_DIR` | `~/.local/state/hy-mt` | pid and log of the translation server |
+| `GEMINI_API_KEY` | (none) | Gemini key for the optional AI features; overrides the key saved in Settings ([AI.md](AI.md)) |
+| `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Gemini model id; overrides the model saved in Settings |
+| `GEMINI_API_BASE` | Google's endpoint | Another Gemini-compatible endpoint (used by the tests) |
 
 When the app is started from a launcher (Finder, Start menu) the `PATH` is minimal; the app adds the usual places (`/opt/homebrew/bin`, `/usr/local/bin`, `~/.local/bin`), or set the `*_BIN` variables.
 
@@ -49,7 +52,9 @@ When the app is started from a launcher (Finder, Start menu) the `PATH` is minim
 
 ## Settings saved by the app
 
-- `DATA_DIR/settings.json`: the language translations are made in (`targetLang`).
+- `DATA_DIR/settings.json`: translation language (`targetLang`), level (`level`), and if you saved them in Settings the Gemini key and model (`geminiApiKey`, `geminiModel`). The key is stored in plain text on your computer; keep the folder private.
+- `DATA_DIR/favorites.json`: saved sentences and their review schedule.
+- `DATA_DIR/ai-cache.json`: cached Gemini answers (safe to delete).
 - Browser `localStorage`: interface language, show/hide translation, colours, text-only mode, playback speed, resume positions. These are per browser.
 
 ## Folders

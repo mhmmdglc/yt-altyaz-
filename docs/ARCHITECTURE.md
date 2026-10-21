@@ -12,8 +12,13 @@ A small Node.js (Express) server plus a plain HTML/CSS/JavaScript interface. No 
 | `segmenter.js` | words → sentences → time snapping → cards (pure functions, unit-tested) |
 | `translator.js` | HY-MT client, translation-server management (`llama-server`), prompt templates |
 | `languages.js` | supported target languages |
+| `gemini.js` | optional Gemini client: prompts, JSON schemas, error mapping (Vary, word meanings in context) |
+| `ai-cache.js` | cache of AI answers (`data/ai-cache.json`) |
+| `favorites.js`, `public/srs.js` | saved sentences and the spaced-repetition scheduler (shared with the browser) |
+| `library.js` | finds sentences with a pattern in your own library |
+| `store.js` | small JSON file store with a write queue |
 | `exec.js`, `open-browser.js` | run a command; open the default browser |
-| `public/` | `index.html`, `app.js` (ES module), `i18n.js`, `locales.js`, `style.css` |
+| `public/` | `index.html`, `app.js` (main module), `vary.js` (Vary panel), `favorites-view.js` (Favorites and Review pages), `fav-store.js`, `clip.js` (sentence and speech playback), `util.js`, `i18n.js`, `locales.js`, `style.css` |
 | `scripts/` | `setup`, `doctor`, `translator` (CLI), `regroup`, macOS launcher helpers |
 | `test/` | `node:test` tests: segmenter, locales, translator prompts, download, server security/API |
 
@@ -33,6 +38,7 @@ A small Node.js (Express) server plus a plain HTML/CSS/JavaScript interface. No 
       "start": 0.4, "end": 7.3,
       "text": "Sentence one. Sentence two.",
       "sents": ["Sentence one.", "Sentence two."],
+      "sentTimes": [[0.4, 3.1], [3.2, 7.3]],
       "tr": "Cümle bir. Cümle iki.",
       "trParts": ["Cümle bir.", "Cümle iki."]
     }
@@ -40,7 +46,7 @@ A small Node.js (Express) server plus a plain HTML/CSS/JavaScript interface. No 
 }
 ```
 
-`sents` is the exact sentence list of the card; `trParts` the translation per sentence (only for multi-sentence cards); `trLang` the language of `tr`. `words.json` holds `{ words: [{ w, s, e }], silences: [{ a, b }] }`. Also in `data/`: `settings.json` (`{ "targetLang": "tr" }`).
+`sents` is the exact sentence list of the card and `sentTimes` the time range of each sentence; `trParts` the translation per sentence (only for multi-sentence cards); `trLang` the language of `tr`. `words.json` holds `{ words: [{ w, s, e }], silences: [{ a, b }] }`. Also in `data/`: `settings.json` (`{ "targetLang": "tr" }`).
 
 ## HTTP API
 
@@ -48,8 +54,8 @@ The API is meant for the bundled interface and may change. All responses are JSO
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/settings` | `{ targetLang, languages, translator: {installed, running}, whisperModel }` |
-| `PUT` | `/api/settings` | `{ targetLang }` |
+| `GET` | `/api/settings` | `{ targetLang, languages, level, levels, translator, whisperModel, ai: { configured, source, model, keyHint } }` (never the key itself) |
+| `PUT` | `/api/settings` | any of `{ targetLang, level, geminiApiKey, geminiModel }` (`""` removes the key or model) |
 | `POST` | `/api/transcribe` | `{ url }` → `{ jobId }`; jobs run one at a time |
 | `GET` | `/api/job/:id` | `{ status: queued\|running… , stage, error, code, project }` |
 | `GET` | `/api/projects` | list: id, title, url, createdAt, segmentCount, translated, trLang, duration |
@@ -58,9 +64,16 @@ The API is meant for the bundled interface and may change. All responses are JSO
 | `GET` | `/api/project/:id/video` | the video (supports range requests) |
 | `POST` | `/api/project/:id/translate` | start translating (`{ force: true }` redoes all cards) |
 | `GET` | `/api/project/:id/translate` | `{ status: idle\|running\|done\|error, done, total, lang, error }` |
-| `GET` | `/api/word?w=word` | `{ word, expanded, tr }` meaning in the target language |
+| `GET` | `/api/word?w=word&s=sentence` | `{ word, tr, expanded?, lemma?, pos?, note?, source: gemini\|local }` meaning in the target language |
+| `POST` | `/api/ai/vary` | `{ text, context?, more? }` → `{ pattern, explanation, examples: [{ en, tr }], library: [...], level }` |
+| `POST` | `/api/ai/test` | checks the Gemini key and model |
+| `GET` | `/api/favorites` | `{ items, due }` |
+| `POST` | `/api/favorites` | `{ projectId, cardIndex, sentIndex }` or `{ kind: "example", text, tr, pattern }` |
+| `DELETE` | `/api/favorites/:id` | remove |
+| `POST` | `/api/favorites/:id/review` | `{ grade: again\|hard\|good\|easy }` → the item with its new schedule |
+| `GET` | `/api/favorites/export.tsv` | tab-separated export for Anki |
 
-Error codes the interface translates: `NO_LANG`, `NO_MODEL`, `NO_WHISPER`, `NO_SPEECH`, `BAD_URL`, `TRANSLATOR_FAILED`, `NOT_FOUND`, `FORBIDDEN`, `BAD_ID`, `INTERNAL`.
+Error codes the interface translates: `NO_LANG`, `NO_MODEL`, `NO_WHISPER`, `NO_SPEECH`, `BAD_URL`, `TRANSLATOR_FAILED`, `NOT_FOUND`, `FORBIDDEN`, `BAD_ID`, `INTERNAL`, `NO_AI_KEY`, `AI_KEY_INVALID`, `AI_QUOTA`, `AI_OFFLINE`, `AI_MODEL`, `AI_BLOCKED`, `AI_FAILED`, `BAD_KEY`, `BAD_LEVEL`, `BAD_TEXT`, `BAD_MODEL`, `BAD_GRADE`.
 
 ## Design notes
 

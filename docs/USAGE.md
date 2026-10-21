@@ -22,7 +22,7 @@ Each card holds one or a few **whole sentences**; a sentence is never split acro
 
 ## Click a word
 
-Click any English word and its meaning in your language appears under it. It is translated on its own, without the sentence around it, so for words with several meanings it shows one of them: it is a quick hint, not a dictionary. Contractions are expanded first (`don't` → `do not`). Click elsewhere or press `Esc` to close it.
+Click any English word and its meaning in your language appears under it. Without a Gemini key the word is translated on its own by the local model, so for words with several meanings it shows one of them; contractions are expanded first (`don't` → `do not`). With a Gemini key the meaning fits the sentence, and you also see the dictionary form, the part of speech and sometimes a short usage note. Click elsewhere or press `Esc` to close it.
 
 ## Shadowing (repeat after the speaker)
 
@@ -31,6 +31,37 @@ Click any English word and its meaning in your language appears under it. It is 
 3. Speak along, then try without listening. Lower the speed (0.75×) if the speaker is fast.
 
 With **Auto-continue** on, playback keeps going down the list from the card you click.
+
+## Favorites
+
+Press **☆** on a card to save a sentence. On a card with several sentences a small menu asks which one; saved sentences get a ★. Press ☆ again (and pick the sentence) to remove it.
+
+**⭐ Favorites** (top bar) lists every saved sentence with its translation and where it came from:
+
+- **▶** plays the sentence with its original audio (examples are read aloud by your computer's voice), **🔁** repeats it for shadowing.
+- **↗ Open in the video** jumps to that moment.
+- **✨ Vary** works here too.
+- **⬇ Export for Anki** downloads a tab-separated file (English, translation, source). In Anki use *File → Import*; audio is not included.
+
+## Review (spaced repetition)
+
+**🧠 Review** shows the saved sentences that are due today, one at a time:
+
+1. The sentence plays. Say it yourself and think of what it means.
+2. Press **Show the translation** (`Space`).
+3. Rate yourself: **Again** (back in 10 minutes, later in this session), **Hard**, **Good**, **Easy** (`1`–`4`). Each button shows when you will see the sentence again.
+
+Sentences you know come back after longer and longer intervals (1 day, 3 days, about a week, …); the ones you miss come back soon. The number on the ⭐ button is how many sentences are due.
+
+## ✨ Vary (optional, needs a Gemini key)
+
+Press **✨** on a card (and pick the sentence if the card has several). The panel shows:
+
+- the **pattern** of the sentence (for example *be not good at + noun / verb-ing*) and a short explanation in your language;
+- **new example sentences** in the same pattern at your level, with the pattern words highlighted, 🔊 to hear them and ☆ to save them to your favorites; **＋ More examples** writes more;
+- **real examples from your videos**: other sentences in your library with the same pattern, with ▶ to play their original audio.
+
+Your level (A2–C1) is set in the top bar. See [AI.md](AI.md) for the key, privacy and cost.
 
 ## Text-only mode
 
@@ -51,6 +82,7 @@ Press **🙈 Hide** (or `V`) to hide the video. The subtitle panel gets wider an
 | `↑` / `↓` | previous / next card |
 | `V` | hide / show the video |
 | `Esc` | close a popup, the video list or a dialog |
+| `Space`, `1`–`4` | in Review: reveal, then rate |
 
 ## Changing the translation language
 
