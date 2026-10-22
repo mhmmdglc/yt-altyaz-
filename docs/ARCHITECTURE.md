@@ -12,7 +12,9 @@ A small Node.js (Express) server plus a plain HTML/CSS/JavaScript interface. No 
 | `segmenter.js` | words → sentences → time snapping → cards (pure functions, unit-tested) |
 | `translator.js` | HY-MT client, translation-server management (`llama-server`), prompt templates |
 | `languages.js` | supported target languages |
-| `gemini.js` | optional Gemini client: prompts, JSON schemas, error mapping (Vary, word meanings in context) |
+| `gemini.js` | optional Gemini client: prompts, JSON schemas, error mapping (Vary, Study, word meanings in context) |
+| `deepseek.js` | optional DeepSeek client (OpenAI-compatible, JSON mode), the fallback when Gemini cannot answer |
+| `ai.js` | provider router: Gemini first, DeepSeek on failure, Gemini paused for 15 minutes after a quota error |
 | `ai-cache.js` | cache of AI answers (`data/ai-cache.json`) |
 | `favorites.js`, `public/srs.js` | saved sentences and the spaced-repetition scheduler (shared with the browser) |
 | `library.js` | finds sentences with a pattern in your own library |
@@ -66,7 +68,7 @@ The API is meant for the bundled interface and may change. All responses are JSO
 | `GET` | `/api/project/:id/translate` | `{ status: idle\|running\|done\|error, done, total, lang, error }` |
 | `GET` | `/api/word?w=word&s=sentence` | `{ word, tr, expanded?, lemma?, pos?, note?, source: gemini\|local }` meaning in the target language |
 | `POST` | `/api/ai/vary` | `{ text, context?, more? }` → `{ pattern, explanation, examples: [{ en, tr }], library: [...], level }` |
-| `POST` | `/api/ai/test` | checks the Gemini key and model |
+| `POST` | `/api/ai/test` | checks one provider's key and model (`{provider: 'gemini' \| 'deepseek'}`) |
 | `POST` | `/api/ai/drill` | `{ text, context?, fresh? }` → `{ pattern, explanation, steps: [{ label, native, en, alternatives, hint }], level }` |
 | `POST` | `/api/speech` | raw audio (webm/opus, mp4…, ≤ 10 MB, first 30 s) → `{ text, silent }`, transcribed locally by Whisper; the recording is deleted |
 | `GET` | `/api/favorites` | `{ items, due }` |

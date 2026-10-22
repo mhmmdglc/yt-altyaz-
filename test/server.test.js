@@ -37,7 +37,7 @@ async function startServer(dataDir = path.join(tmp, `data-${children.length}`)) 
   const port = await freePort();
   const child = spawn(process.execPath, ['server.js'], {
     cwd: ROOT,
-    env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, WORK_DIR: path.join(tmp, 'work'), HYMT_PORT: String(await freePort()), HYMT_MODEL_DIR: path.join(tmp, 'no-model'), GEMINI_API_KEY: '', GEMINI_MODEL: '', GEMINI_API_BASE: `http://127.0.0.1:${fakeGemini.address().port}` },
+    env: { ...process.env, PORT: String(port), DATA_DIR: dataDir, WORK_DIR: path.join(tmp, 'work'), HYMT_PORT: String(await freePort()), HYMT_MODEL_DIR: path.join(tmp, 'no-model'), DOTENV_PATH: path.join(tmp, 'no.env'), DEEPSEEK_API_KEY: '', DEEPSEEK_MODEL: '', GEMINI_API_KEY: '', GEMINI_MODEL: '', GEMINI_API_BASE: `http://127.0.0.1:${fakeGemini.address().port}` },
     stdio: 'ignore'
   });
   children.push(child);

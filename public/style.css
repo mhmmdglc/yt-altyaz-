@@ -961,3 +961,7 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 .study-summary { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 18px 0 6px; padding: 12px 14px; border-radius: 12px; background: rgba(99, 102, 241, 0.08); }
 .study-summary:empty { display: none; }
 .study-privacy { margin-top: 10px; }
+
+/* AI provider: settings sub-box and the small chip on AI answers */
+.ai-sub { display: flex; flex-direction: column; gap: 6px; padding: 10px 0 2px; border-top: 1px dashed var(--border-strong); }
+.provider-chip { font-size: 11px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--border-strong); color: var(--muted); }

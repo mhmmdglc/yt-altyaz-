@@ -42,6 +42,9 @@ Starting the app with `npm start` opens your browser. `npm run dev` (restarts on
 | `GEMINI_API_KEY` | (none) | Gemini key for the optional AI features; overrides the key saved in Settings ([AI.md](AI.md)) |
 | `GEMINI_MODEL` | `gemini-3.5-flash-lite` | Gemini model id; overrides the model saved in Settings |
 | `GEMINI_API_BASE` | Google's endpoint | Another Gemini-compatible endpoint (used by the tests) |
+| `DEEPSEEK_API_KEY` | (none) | DeepSeek key, used when Gemini cannot answer (quota, errors); overrides the key saved in Settings ([AI.md](AI.md#deepseek-as-a-fallback)) |
+| `DEEPSEEK_MODEL` | `deepseek-flash` | DeepSeek model id |
+| `DEEPSEEK_BASE_URL` | `https://api.deepseek.com` | Another OpenAI-compatible endpoint for the fallback |
 
 When the app is started from a launcher (Finder, Start menu) the `PATH` is minimal; the app adds the usual places (`/opt/homebrew/bin`, `/usr/local/bin`, `~/.local/bin`), or set the `*_BIN` variables.
 

@@ -1,5 +1,5 @@
 import { t, tn, getLang, setLang, applyI18n, localeOptions, languageName } from './i18n.js';
-import { $, fmtTime, toast, sleep, apiError, store, api, el } from './util.js';
+import { $, fmtTime, toast, sleep, apiError, store, api, el, providerName } from './util.js';
 import { stopClip } from './clip.js';
 import { loadFavorites, dueFavorites, onFavoritesChange, findVideoFav, addVideoFav, removeFav } from './fav-store.js';
 import { openVary, closeVary } from './vary.js';
@@ -26,6 +26,11 @@ const els = {
   aiTest: $('#aiTest'),
   aiModelInput: $('#aiModelInput'),
   aiWordsToggle: $('#aiWordsToggle'),
+  dsStatus: $('#dsStatus'),
+  dsKeyInput: $('#dsKeyInput'),
+  dsKeySave: $('#dsKeySave'),
+  dsKeyRemove: $('#dsKeyRemove'),
+  dsTest: $('#dsTest'),
   drawerBtn: $('#drawerBtn'),
   drawerBackdrop: $('#drawerBackdrop'),
   sidebar: $('.sidebar'),
@@ -920,11 +925,19 @@ function fillLevels() {
 
 function fillAI() {
   const ai = settings.ai || {};
-  els.aiStatus.textContent = ai.source === 'env' ? t('settings.aiStatusEnv')
-    : ai.configured ? t('settings.aiStatusSaved', { hint: ai.keyHint }) : t('settings.aiStatusNone');
-  els.aiStatus.classList.toggle('ok', !!ai.configured);
-  els.aiKeyRemove.classList.toggle('hidden', ai.source !== 'settings');
-  els.aiTest.disabled = !ai.configured;
+  const gem = ai.gemini || {};
+  const ds = ai.deepseek || {};
+  els.aiStatus.textContent = gem.paused ? t('settings.aiPaused')
+    : gem.source === 'env' ? t('settings.aiStatusEnv')
+    : gem.configured ? t('settings.aiStatusSaved', { hint: gem.keyHint }) : t('settings.aiStatusNone');
+  els.aiStatus.classList.toggle('ok', !!gem.configured && !gem.paused);
+  els.aiKeyRemove.classList.toggle('hidden', gem.source !== 'settings');
+  els.aiTest.disabled = !gem.configured;
+  els.dsStatus.textContent = ds.source === 'env' ? t('settings.dsStatusEnv', { model: ds.model })
+    : ds.configured ? t('settings.dsStatusSaved', { hint: ds.keyHint, model: ds.model }) : t('settings.dsStatusNone');
+  els.dsStatus.classList.toggle('ok', !!ds.configured);
+  els.dsKeyRemove.classList.toggle('hidden', ds.source !== 'settings');
+  els.dsTest.disabled = !ds.configured;
   els.aiModelInput.value = ai.model || '';
   els.aiWordsToggle.checked = !!ai.wordMeanings;
   els.aiWordsToggle.disabled = !ai.configured;
@@ -961,17 +974,28 @@ els.aiWordsToggle.addEventListener('change', async () => {
   if (await saveSetting({ aiWordMeanings: els.aiWordsToggle.checked })) wordCache.clear();
 });
 els.aiModelInput.addEventListener('change', () => saveSetting({ geminiModel: els.aiModelInput.value.trim() }));
-els.aiTest.addEventListener('click', async () => {
-  els.aiTest.disabled = true;
+async function testProvider(provider, button) {
+  button.disabled = true;
   try {
-    const r = await api('/api/ai/test', { method: 'POST', body: {} });
-    toast(t('settings.aiTestOk', { model: r.model }), 3500);
+    const r = await api('/api/ai/test', { method: 'POST', body: { provider } });
+    toast(t('settings.aiTestOk', { provider: providerName(provider), model: r.model }), 3500);
+    await loadSettings();
+    fillAI();
   } catch (err) {
     toast(`⚠️ ${err.message}`, 5000);
   } finally {
-    els.aiTest.disabled = !settings.ai?.configured;
+    button.disabled = !settings.ai?.[provider]?.configured;
   }
+}
+els.aiTest.addEventListener('click', () => testProvider('gemini', els.aiTest));
+els.dsTest.addEventListener('click', () => testProvider('deepseek', els.dsTest));
+els.dsKeySave.addEventListener('click', async () => {
+  const key = els.dsKeyInput.value.trim();
+  if (!key) return els.dsKeyInput.focus();
+  if (await saveSetting({ deepseekApiKey: key })) els.dsKeyInput.value = '';
 });
+els.dsKeyInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') els.dsKeySave.click(); });
+els.dsKeyRemove.addEventListener('click', () => saveSetting({ deepseekApiKey: '' }));
 document.addEventListener('app:open-settings', () => {
   openSettings(false);
   els.aiKeyInput.focus();

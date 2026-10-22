@@ -1,7 +1,7 @@
 // 🎯 Study: a speaking ladder built from one sentence. The learner sees the sentence in their language,
 // says it in English (transcribed locally by Whisper and checked word by word), then reveals and listens.
 import { t } from './i18n.js';
-import { api, el, toast, highlightPattern, stripMarks, setChildren } from './util.js';
+import { api, el, toast, highlightPattern, stripMarks, setChildren, providerName } from './util.js';
 import { playClip, speak, stopClip, playingKey } from './clip.js';
 import { compareSpeech } from './speech-match.js';
 import { canRecord, startRecording, stopRecording, isRecording, transcribe } from './recorder.js';
@@ -123,7 +123,10 @@ export function renderStudy(root, { source, back, hasProject }) {
     index = 0;
     focus = null;
     info.replaceChildren(
-      el('div.vary-pattern', {}, [el('span.vary-label', { text: t('vary.title') }), el('strong', { text: data.pattern }), el('span.badge', { text: data.level })]),
+      el('div.vary-pattern', {}, [
+        el('span.vary-label', { text: t('vary.title') }), el('strong', { text: data.pattern }), el('span.badge', { text: data.level }),
+        data.provider ? el('span.provider-chip', { text: providerName(data.provider), title: t('ai.madeBy', { provider: providerName(data.provider) }) }) : null
+      ]),
       el('p.vary-explain', { text: data.explanation })
     );
     drawTools();

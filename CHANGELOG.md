@@ -2,6 +2,15 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] - 2026-10-22
+
+### Added
+- **DeepSeek fallback** for the AI features: when Gemini cannot answer (quota used up, an error), the same request goes straight to DeepSeek, and after a quota error Gemini is skipped for 15 minutes. Key via `DEEPSEEK_API_KEY` or Settings; a DeepSeek key alone also works.
+- A small **Gemini / DeepSeek** chip on Vary and Study answers; Settings shows when Gemini is paused, and each provider has its own **Test** button.
+
+### Changed
+- AI error messages no longer name Gemini, since either provider may have answered.
+
 ## [1.2.0] - 2026-10-21
 
 ### Added

@@ -8,7 +8,7 @@ export const ROOT = path.dirname(fileURLToPath(import.meta.url));
 export const IS_WINDOWS = process.platform === 'win32';
 
 // Settings from a .env file in the project folder (e.g. GEMINI_API_KEY=…). Variables already set in the environment win.
-const ENV_FILE = path.join(ROOT, '.env');
+const ENV_FILE = process.env.DOTENV_PATH || path.join(ROOT, '.env'); // the tests point this elsewhere
 if (existsSync(ENV_FILE)) {
   try {
     process.loadEnvFile(ENV_FILE);

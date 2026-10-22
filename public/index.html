@@ -188,6 +188,22 @@
           <button id="aiTest" class="btn btn-sm" data-i18n="settings.aiTest"></button>
           <button id="aiKeyRemove" class="btn btn-sm btn-danger" data-i18n="settings.aiRemove"></button>
         </div>
+        <div class="ai-sub">
+          <strong class="small" data-i18n="settings.dsTitle"></strong>
+          <small class="muted" data-i18n="settings.dsHelp"></small>
+          <p id="dsStatus" class="ai-status"></p>
+          <div class="ai-row">
+            <input id="dsKeyInput" class="input input-sm" type="password" autocomplete="off" spellcheck="false" data-i18n-placeholder="settings.dsKeyPh" />
+            <button id="dsKeySave" class="btn btn-sm btn-primary" data-i18n="settings.aiSave"></button>
+          </div>
+          <div class="ai-row">
+            <a href="https://platform.deepseek.com/api_keys" target="_blank" rel="noopener noreferrer" class="small" data-i18n="settings.dsGetKey"></a>
+            <span class="head-spacer"></span>
+            <button id="dsTest" class="btn btn-sm" data-i18n="settings.aiTest"></button>
+            <button id="dsKeyRemove" class="btn btn-sm btn-danger" data-i18n="settings.aiRemove"></button>
+          </div>
+          <small class="muted" data-i18n="settings.dsPrivacy"></small>
+        </div>
         <label class="ai-row ai-check">
           <input type="checkbox" id="aiWordsToggle" />
           <span class="small" data-i18n="settings.aiWords"></span>

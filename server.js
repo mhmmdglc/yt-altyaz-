@@ -10,6 +10,8 @@ import { LANGUAGES, findLanguage } from './languages.js';
 import { openBrowser } from './open-browser.js';
 import * as translator from './translator.js';
 import * as gemini from './gemini.js';
+import { router, geminiPaused, resetCooldown } from './ai.js';
+import { DEFAULT_DEEPSEEK_MODEL } from './deepseek.js';
 import { createFavorites, GRADES, isDue } from './favorites.js';
 import { createAICache } from './ai-cache.js';
 import { searchLibrary, sentencesOfCard } from './library.js';
@@ -89,15 +91,27 @@ async function loadProject(id) {
 }
 
 // Gemini settings: the GEMINI_API_KEY / GEMINI_MODEL environment variables win over the values saved in settings.json
+// AI settings. Gemini is used first; DeepSeek (optional) takes over when Gemini fails, e.g. when its quota is used up.
+// Environment variables (or .env) win over the values saved in settings.json.
 async function aiConfig() {
   const s = await readSettings();
   const apiKey = process.env.GEMINI_API_KEY || s.geminiApiKey || '';
+  const dsKey = process.env.DEEPSEEK_API_KEY || s.deepseekApiKey || '';
   return {
     apiKey,
     source: process.env.GEMINI_API_KEY ? 'env' : s.geminiApiKey ? 'settings' : null,
-    model: process.env.GEMINI_MODEL || s.geminiModel || gemini.DEFAULT_MODEL
+    model: process.env.GEMINI_MODEL || s.geminiModel || gemini.DEFAULT_MODEL,
+    deepseek: {
+      apiKey: dsKey,
+      source: process.env.DEEPSEEK_API_KEY ? 'env' : s.deepseekApiKey ? 'settings' : null,
+      model: process.env.DEEPSEEK_MODEL || s.deepseekModel || DEFAULT_DEEPSEEK_MODEL
+    },
+    any: !!(apiKey || dsKey)
   };
 }
+
+const routerFor = (ai, prefer) => router({ gemini: { apiKey: ai.apiKey, model: ai.model }, deepseek: ai.deepseek, prefer });
+const hint = (key) => (key ? `…${key.slice(-4)}` : null);
 
 const levelOf = (s) => (gemini.LEVELS.includes(s.level) ? s.level : 'B1');
 
@@ -112,7 +126,12 @@ app.get('/api/settings', async (_req, res) => {
     translator: { installed: translator.modelInstalled(), running: await translator.isUp() },
     whisperModel: findWhisperModel() ? path.basename(findWhisperModel()) : null,
     // The key itself never leaves the server; only its last characters are shown
-    ai: { configured: !!ai.apiKey, source: ai.source, model: ai.model, keyHint: ai.apiKey ? `…${ai.apiKey.slice(-4)}` : null, wordMeanings: !!s.aiWordMeanings }
+    ai: {
+      configured: ai.any, // Vary and Study work with either provider
+      source: ai.source, model: ai.model, keyHint: hint(ai.apiKey), wordMeanings: !!s.aiWordMeanings,
+      gemini: { configured: !!ai.apiKey, source: ai.source, model: ai.model, keyHint: hint(ai.apiKey), paused: geminiPaused() },
+      deepseek: { configured: !!ai.deepseek.apiKey, source: ai.deepseek.source, model: ai.deepseek.model, keyHint: hint(ai.deepseek.apiKey) }
+    }
   });
 });
 
@@ -133,6 +152,11 @@ app.put('/api/settings', async (req, res) => {
     patch.geminiApiKey = key || undefined;
   }
   if ('aiWordMeanings' in body) patch.aiWordMeanings = body.aiWordMeanings === true || undefined;
+  if ('deepseekApiKey' in body) {
+    const key = String(body.deepseekApiKey ?? '').trim();
+    if (key && !/^[\w.-]{20,200}$/.test(key)) return res.status(400).json({ error: 'This does not look like an API key', code: 'BAD_KEY' });
+    patch.deepseekApiKey = key || undefined;
+  }
   if ('geminiModel' in body) {
     const model = String(body.geminiModel ?? '').trim();
     if (model && !/^[\w.-]{3,80}$/.test(model)) return res.status(400).json({ error: 'Invalid model name', code: 'BAD_MODEL' });
@@ -331,15 +355,16 @@ app.get('/api/word', async (req, res) => {
     const lang = await targetLang();
     const ai = await aiConfig();
     const settings = await readSettings();
-    if (ai.apiKey && sentence && settings.aiWordMeanings) {
+    if (ai.any && sentence && settings.aiWordMeanings) {
       try {
         const level = levelOf(settings);
         const key = aiCache.keyOf(['word', lang, level, w.toLowerCase(), sentence]);
         const cached = await aiCache.get(key);
-        if (cached) return res.json({ ...cached, source: 'gemini' });
-        const result = await gemini.wordInContext({ apiKey: ai.apiKey, model: ai.model, word: w, sentence, lang, level });
+        if (cached) return res.json({ ...cached, source: cached.provider || 'gemini' });
+        const r = routerFor(ai);
+        const result = { ...(await gemini.wordInContext({ generate: r.generate, word: w, sentence, lang, level })), provider: r.used.provider };
         await aiCache.set(key, result);
-        return res.json({ ...result, source: 'gemini' });
+        return res.json({ ...result, source: result.provider });
       } catch (e) {
         if (!(e instanceof gemini.AIError) || !translator.modelInstalled() || ['AI_KEY_INVALID', 'AI_MODEL'].includes(e.code)) throw e;
         aiError = e.code; // fall back to the local model below
@@ -370,8 +395,9 @@ app.post('/api/ai/vary', async (req, res) => {
     let result = await aiCache.get(key);
     if (!result || req.body?.more) {
       const exclude = (result?.examples || []).map((e) => e.en.replace(/\[\[|\]\]/g, ''));
-      const fresh = await gemini.vary({ apiKey: ai.apiKey, model: ai.model, sentence: text, context, lang, level, exclude });
-      result = result ? { ...result, examples: [...result.examples, ...fresh.examples] } : fresh;
+      const r = routerFor(ai);
+      const fresh = await gemini.vary({ generate: r.generate, sentence: text, context, lang, level, exclude });
+      result = result ? { ...result, examples: [...result.examples, ...fresh.examples], provider: r.used.provider } : { ...fresh, provider: r.used.provider };
       await aiCache.set(key, result);
     }
     const library = await searchLibrary(DATA_DIR, result.search || [], { exclude: text, limit: 5 });
@@ -394,7 +420,8 @@ app.post('/api/ai/drill', async (req, res) => {
     const key = aiCache.keyOf(['drill', 2, lang, level, text]); // 2: English-first ladders (older ones are not reused)
     let result = req.body?.fresh ? null : await aiCache.get(key);
     if (!result) {
-      result = await gemini.drill({ apiKey: ai.apiKey, model: ai.model, sentence: text, context, lang, level });
+      const r = routerFor(ai);
+      result = { ...(await gemini.drill({ generate: r.generate, sentence: text, context, lang, level })), provider: r.used.provider };
       await aiCache.set(key, result);
     }
     res.json({ ...result, level });
@@ -427,11 +454,15 @@ app.post('/api/speech', express.raw({ type: () => true, limit: '10mb' }), async 
 });
 
 // Checks that the configured key and model work (used by the Settings dialog)
-app.post('/api/ai/test', async (_req, res) => {
+// { provider: 'gemini' | 'deepseek' } tests that one provider; a successful Gemini test also ends a quota pause
+app.post('/api/ai/test', async (req, res) => {
+  const prefer = req.body?.provider === 'deepseek' ? 'deepseek' : 'gemini';
   try {
     const ai = await aiConfig();
-    await gemini.wordInContext({ apiKey: ai.apiKey, model: ai.model, word: 'test', sentence: 'This is a test.', lang: (await readSettings()).targetLang || 'tr' });
-    res.json({ ok: true, model: ai.model });
+    const r = routerFor(ai, prefer);
+    await gemini.wordInContext({ generate: r.generate, word: 'test', sentence: 'This is a test.', lang: (await readSettings()).targetLang || 'tr' });
+    if (prefer === 'gemini') resetCooldown();
+    res.json({ ok: true, provider: prefer, model: prefer === 'deepseek' ? ai.deepseek.model : ai.model });
   } catch (e) {
     sendError(res, e);
   }

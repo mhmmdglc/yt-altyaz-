@@ -151,7 +151,7 @@ Press ✨ on a card. You get the grammar pattern of the sentence, a short explan
 
 <img src="docs/img/vary.png" alt="Vary: the pattern, an explanation and new examples with the pattern highlighted" width="760"/>
 
-Choose your level (A2, B1, B2, C1) in the top bar. Vary needs a free Gemini API key: put `GEMINI_API_KEY=…` in a `.env` file in the project folder, or paste it in **⚙ Settings**. [docs/AI.md](docs/AI.md) explains what is sent and what it costs.
+Choose your level (A2, B1, B2, C1) in the top bar. Vary needs a free Gemini API key: put `GEMINI_API_KEY=…` in a `.env` file in the project folder, or paste it in **⚙ Settings**. Add a `DEEPSEEK_API_KEY` too and DeepSeek takes over whenever Gemini's quota runs out. [docs/AI.md](docs/AI.md) explains what is sent and what it costs.
 
 ### 8. Study a sentence by speaking (optional, Gemini)
 

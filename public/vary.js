@@ -1,6 +1,6 @@
 // "✨ Vary": the grammar pattern of a sentence, new example sentences in the same pattern, and real examples from your videos.
 import { t } from './i18n.js';
-import { api, el, toast, highlightPattern, stripMarks, setChildren } from './util.js';
+import { api, el, toast, highlightPattern, stripMarks, setChildren, providerName } from './util.js';
 import { playClip, speak, stopClip, playingKey } from './clip.js';
 import { addExampleFav, addVideoFav, findExampleFav, findVideoFav } from './fav-store.js';
 
@@ -56,7 +56,10 @@ export async function openVary(container, { text, context = '' }) {
       if (next && open?.token === state.token) render(target, next);
     } });
     target.replaceChildren(
-      el('div.vary-pattern', {}, [el('span.vary-label', { text: t('vary.title') }), el('strong', { text: d.pattern }), el('span.badge', { text: d.level })]),
+      el('div.vary-pattern', {}, [
+        el('span.vary-label', { text: t('vary.title') }), el('strong', { text: d.pattern }), el('span.badge', { text: d.level }),
+        d.provider ? el('span.provider-chip', { text: providerName(d.provider), title: t('ai.madeBy', { provider: providerName(d.provider) }) }) : null
+      ]),
       el('p.vary-explain', { text: d.explanation }),
       examples,
       el('div.vary-actions', {}, [

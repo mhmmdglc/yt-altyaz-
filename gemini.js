@@ -52,6 +52,9 @@ export async function generateJSON({ apiKey, model = DEFAULT_MODEL, prompt, sche
 }
 
 const languageName = (code) => findLanguage(code)?.name || 'English';
+
+// The function that turns { prompt, schema, temperature } into an object: the provider router (ai.js), or Gemini directly
+const gen = ({ apiKey, model, generate }) => generate || ((args) => generateJSON({ apiKey, model, ...args }));
 const clean = (s, max = 400) => String(s ?? '').replace(/\s+/g, ' ').trim().slice(0, max);
 
 const VARY_SCHEMA = {
@@ -82,12 +85,12 @@ export function varyPrompt({ sentence, context = '', lang, level = 'B1', count =
 }
 
 // Pattern, explanation and example sentences with translations
-export async function vary({ apiKey, model, sentence, context, lang, level, count = 4, exclude = [] }) {
-  const out = await generateJSON({ apiKey, model, prompt: varyPrompt({ sentence, context, lang, level, count, exclude }), schema: VARY_SCHEMA, temperature: 0.9 });
+export async function vary({ apiKey, model, generate, sentence, context, lang, level, count = 4, exclude = [] }) {
+  const out = await gen({ apiKey, model, generate })({ prompt: varyPrompt({ sentence, context, lang, level, count, exclude }), schema: VARY_SCHEMA, temperature: 0.9 });
   const examples = (Array.isArray(out.examples) ? out.examples : [])
     .map((e) => ({ en: clean(e.en, 300), tr: clean(e.translation ?? e.tr, 400).replace(/\[\[|\]\]/g, '') }))
     .filter((e) => e.en && e.tr && !exclude.includes(e.en.replace(/\[\[|\]\]/g, '')));
-  if (!examples.length) throw new AIError('AI_FAILED', 'Gemini returned no usable examples.');
+  if (!examples.length) throw new AIError('AI_FAILED', 'The AI returned no usable examples.');
   return {
     pattern: clean(out.pattern, 200),
     explanation: clean(out.explanation, 800),
@@ -115,8 +118,8 @@ export function wordPrompt({ word, sentence, lang, level = 'B1' }) {
   ].join('\n');
 }
 
-export async function wordInContext({ apiKey, model, word, sentence, lang, level }) {
-  const out = await generateJSON({ apiKey, model, prompt: wordPrompt({ word, sentence, lang, level }), schema: WORD_SCHEMA, temperature: 0.2 });
+export async function wordInContext({ apiKey, model, generate, word, sentence, lang, level }) {
+  const out = await gen({ apiKey, model, generate })({ prompt: wordPrompt({ word, sentence, lang, level }), schema: WORD_SCHEMA, temperature: 0.2 });
   return { word, lemma: clean(out.lemma, 60), pos: clean(out.pos, 40), tr: clean(out.meaning, 120), note: clean(out.note, 300) };
 }
 
@@ -176,8 +179,8 @@ export function drillPrompt({ sentence, context = '', lang, level = 'B1' }) {
   ].filter((l) => l !== '').join('\n');
 }
 
-export async function drill({ apiKey, model, sentence, context, lang, level }) {
-  const out = await generateJSON({ apiKey, model, prompt: drillPrompt({ sentence, context, lang, level }), schema: DRILL_SCHEMA, temperature: 0.6 });
+export async function drill({ apiKey, model, generate, sentence, context, lang, level }) {
+  const out = await gen({ apiKey, model, generate })({ prompt: drillPrompt({ sentence, context, lang, level }), schema: DRILL_SCHEMA, temperature: 0.6 });
   const steps = (Array.isArray(out.steps) ? out.steps : [])
     .map((s) => ({
       label: clean(s.label, 40),
@@ -189,6 +192,6 @@ export async function drill({ apiKey, model, sentence, context, lang, level }) {
     .filter((s) => s.native && s.en)
     // drop repeated steps, also ones that only differ by a contraction ("I am" / "I'm")
     .filter((s, i, all) => all.findIndex((x) => tokens(x.en).join(' ') === tokens(s.en).join(' ')) === i);
-  if (steps.length < 3) throw new AIError('AI_FAILED', 'Gemini returned too few steps.');
+  if (steps.length < 3) throw new AIError('AI_FAILED', 'The AI returned too few steps.');
   return { pattern: clean(out.pattern, 200), explanation: clean(out.explanation, 600), steps };
 }

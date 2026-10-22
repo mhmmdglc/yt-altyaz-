@@ -151,7 +151,7 @@ Bir kartta ✨'e bas. Cümlenin gramer kalıbı, kendi dilinde kısa bir açıkl
 
 <img src="docs/img/vary-tr.png" alt="Çeşitle: kalıp, açıklama ve kalıbı vurgulanmış yeni örnekler" width="760"/>
 
-Seviyeni (A2, B1, B2, C1) üst menüden seç. Çeşitle ücretsiz bir Gemini API anahtarı ister: proje klasöründe bir `.env` dosyasına `GEMINI_API_KEY=…` yaz ya da **⚙ Ayarlar**'a yapıştır. Neyin gönderildiği ve ücreti [docs/AI.md](docs/AI.md) içinde (İngilizce).
+Seviyeni (A2, B1, B2, C1) üst menüden seç. Çeşitle ücretsiz bir Gemini API anahtarı ister: proje klasöründe bir `.env` dosyasına `GEMINI_API_KEY=…` yaz ya da **⚙ Ayarlar**'a yapıştır. Bir de `DEEPSEEK_API_KEY` eklersen Gemini kotası dolduğunda DeepSeek hemen devralır. Neyin gönderildiği ve ücreti [docs/AI.md](docs/AI.md) içinde (İngilizce).
 
 ### 8. Bir cümleyi konuşarak çalış (opsiyonel, Gemini)
 

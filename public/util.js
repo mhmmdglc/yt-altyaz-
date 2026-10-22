@@ -81,4 +81,7 @@ export function setChildren(node, ...children) {
   node.replaceChildren(...children.filter((c) => c !== null && c !== undefined && c !== false));
 }
 
+// Display name of an AI provider id
+export const providerName = (id) => ({ gemini: 'Gemini', deepseek: 'DeepSeek' })[id] || id || '';
+
 export const stripMarks = (text) => String(text).replace(/\[\[|\]\]/g, '');
