@@ -79,6 +79,7 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
   let data = null;
   let tab = 'speak'; // 'speak' | 'vary'
   let varyMounted = false;
+  let clickSpeak = localStorage.getItem('studyClickSpeak') !== 'off'; // clicking a sentence also reads it aloud
   let mode = localStorage.getItem('studyMode') === 'single' ? 'single' : 'list';
   let index = 0;
   let focus = null; // a Set of step indices when practising only the missed ones
@@ -125,6 +126,10 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
     setChildren(tabs,
       el('div.seg', { role: 'group' }, [tabBtn('speak', t('study.tabSpeak')), tabBtn('vary', t('study.tabVary'))]),
       el('span.head-spacer'),
+      el('label.level-pick.click-speak', { title: t('study.clickSpeakTitle') }, [
+        el('input', { type: 'checkbox', checked: clickSpeak, onchange: (e) => { clickSpeak = e.target.checked; localStorage.setItem('studyClickSpeak', clickSpeak ? 'on' : 'off'); } }),
+        el('span', { text: t('study.clickSpeak') })
+      ]),
       el('label.level-pick', { title: t('study.levelTitle') }, [el('span', { text: t('settings.level') }), levelSel])
     );
   }
@@ -186,8 +191,11 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
     const st = state[i];
     const plain = stripMarks(step.en);
     const box = el(`div.step${st.grade ? `.g-${st.grade}` : ''}`);
-    const en = el(`div.step-en${st.revealed ? '' : '.blur'}`, { title: st.revealed ? '' : t('study.revealHint'), onclick: () => reveal(i) }, highlightPattern(step.en));
     const listenKey = `step:${i}`;
+    const en = el(`div.step-en${st.revealed ? '' : '.blur'}`, { title: st.revealed ? '' : t('study.revealHint'), onclick: () => {
+      reveal(i);
+      if (clickSpeak) speakStep(i);
+    } }, highlightPattern(step.en));
     const listen = el('button.icon-btn', { text: '🔊', title: t('study.listen'), 'aria-label': t('study.listen'), onclick: () => {
       if (playingKey() === listenKey) return stopClip();
       reveal(i);
@@ -216,7 +224,7 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
       el('div.step-actions', {}, [
         st.say.button,
         !st.revealed && step.hint && !st.hint ? el('button.btn.btn-sm', { text: t('study.hint'), onclick: () => { st.hint = true; redraw(i); } }) : null,
-        !st.revealed ? el('button.btn.btn-sm', { text: t('study.reveal'), onclick: () => reveal(i) }) : null,
+        !st.revealed ? el('button.btn.btn-sm', { text: t('study.reveal'), onclick: () => { reveal(i); if (clickSpeak) speakStep(i); } }) : null,
         listen, loop,
         el('span.head-spacer'),
         gradeBtn('known', t('study.known')),
@@ -226,6 +234,13 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
     );
     box.dataset.i = String(i);
     return box;
+  }
+
+  // Reads step i aloud; a second click on the same sentence stops it
+  function speakStep(i) {
+    const key = `step:${i}`;
+    if (playingKey() === key) return stopClip();
+    speak(stripMarks(data.steps[i].en), { key });
   }
 
   function redraw(i) {
