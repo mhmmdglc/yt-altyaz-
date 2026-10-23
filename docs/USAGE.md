@@ -40,12 +40,14 @@ Press **☆** on a card to save a sentence. On a card with several sentences a s
 
 - **▶** plays the sentence with its original audio (examples are read aloud by your computer's voice), **🔁** repeats it for shadowing.
 - **↗ Open in the video** jumps to that moment.
-- **✨ Vary** works here too.
+- **🎯 Study** works here too (with the **✨ Vary** tab).
 - **⬇ Export for Anki** downloads a tab-separated file (English, translation, source). In Anki use *File → Import*; audio is not included.
 
 ## 🎯 Study (speaking practice)
 
-Press **🎯** on a card (pick the sentence on a multi-sentence card), **🎯 Study this pattern** in the Vary panel, or **🎯 Study** on a favorite. Needs a Gemini key to build the ladder; your voice is processed only on your computer.
+Press **🎯** on a card (pick the sentence on a multi-sentence card) or **🎯 Study** on a favorite. One page for understanding a sentence completely: the **🎤 Speak** tab (the speaking ladder) and the **✨ Vary** tab (the pattern in new example sentences, see below). Needs a Gemini or DeepSeek key; your voice is processed only on your computer.
+
+Your **level** (A2–C1) is chosen on this page, next to the tabs: the ladder and the examples are written for it, and changing it rebuilds both. It is remembered, and Settings shows it too.
 
 The page shows the sentence (▶ plays its original audio), its pattern, and a ladder of steps (8 at A2, 12 at B1, 14 at B2, 15 at C1): the simplest core, other subjects, negative, question, added details, the full sentence, and a natural extension. Each step shows the sentence **in your language** and the English **blurred**.
 
@@ -65,15 +67,14 @@ The page shows the sentence (▶ plays its original audio), its pattern, and a l
 
 Sentences you know come back after longer and longer intervals (1 day, 3 days, about a week, …); the ones you miss come back soon. The number on the ⭐ button is how many sentences are due.
 
-## ✨ Vary (optional, needs a Gemini key)
+## ✨ Vary tab (optional, needs an AI key)
 
-Press **✨** on a card (and pick the sentence if the card has several). The panel shows:
+On the Study page, open the **✨ Vary** tab. The sentence's pattern (for example *be not good at + noun / verb-ing*) and a short explanation in your language are at the top of the page; the tab shows:
 
-- the **pattern** of the sentence (for example *be not good at + noun / verb-ing*) and a short explanation in your language;
 - **new example sentences** in the same pattern at your level, with the pattern words highlighted, 🔊 to hear them and ☆ to save them to your favorites; **＋ More examples** writes more;
 - **real examples from your videos**: other sentences in your library with the same pattern, with ▶ to play their original audio.
 
-Your level (A2–C1) is set in the top bar. See [AI.md](AI.md) for the key, privacy and cost.
+See [AI.md](AI.md) for the key, privacy and cost.
 
 ## Text-only mode
 

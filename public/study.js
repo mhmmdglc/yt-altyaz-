@@ -2,6 +2,7 @@
 // says it in English (transcribed locally by Whisper and checked word by word), then reveals and listens.
 import { t } from './i18n.js';
 import { api, el, toast, highlightPattern, stripMarks, setChildren, providerName } from './util.js';
+import { mountVary } from './vary.js';
 import { playClip, speak, stopClip, playingKey } from './clip.js';
 import { compareSpeech } from './speech-match.js';
 import { canRecord, startRecording, stopRecording, isRecording, transcribe } from './recorder.js';
@@ -74,8 +75,10 @@ export function sayWidget({ expected, alternatives = [], onResult }) {
 /* ---------- The Study page ---------- */
 
 // source: { text, tr, context, projectId?, start?, end?, title? }; back: { label, href }
-export function renderStudy(root, { source, back, hasProject }) {
+export function renderStudy(root, { source, back, hasProject, levels, getLevel, setLevel }) {
   let data = null;
+  let tab = 'speak'; // 'speak' | 'vary'
+  let varyMounted = false;
   let mode = localStorage.getItem('studyMode') === 'single' ? 'single' : 'list';
   let index = 0;
   let focus = null; // a Set of step indices when practising only the missed ones
@@ -100,14 +103,48 @@ export function renderStudy(root, { source, back, hasProject }) {
     el('button.icon-btn', { text: '▶', title: t('fav.play'), 'aria-label': t('fav.play'), onclick: listenOriginal })
   ]);
   const info = el('div.study-info');
+  const tabs = el('div.study-tabs');
   const tools = el('div.study-tools');
   const body = el('div.study-body', {}, [el('p.muted', { text: t('study.loading') })]);
   const summary = el('div.study-summary');
-  root.replaceChildren(el('div.study', {}, [head, info, tools, body, summary, el('p.muted.small.study-privacy', { text: t('study.privacy') })]));
+  const speakPane = el('div.study-pane', {}, [tools, body, summary, el('p.muted.small.study-privacy', { text: t('study.privacy') })]);
+  const varyBody = el('div.vary-body');
+  const varyPane = el('div.study-pane.hidden', {}, [varyBody]);
+  root.replaceChildren(el('div.study', {}, [head, info, tabs, speakPane, varyPane]));
+
+  function drawTabs() {
+    const tabBtn = (id, label) => el(`button${tab === id ? '.active' : ''}`, { text: label, onclick: () => showTab(id) });
+    const levelSel = el('select.select.select-sm', { title: t('study.levelTitle'), onchange: async (e) => {
+      const ok = await setLevel(e.target.value);
+      if (!ok) { e.target.value = getLevel(); return; }
+      stopClip();
+      varyMounted = false;
+      load();
+      if (tab === 'vary') showTab('vary');
+    } }, levels.map((l) => new Option(l, l, false, l === getLevel())));
+    setChildren(tabs,
+      el('div.seg', { role: 'group' }, [tabBtn('speak', t('study.tabSpeak')), tabBtn('vary', t('study.tabVary'))]),
+      el('span.head-spacer'),
+      el('label.level-pick', { title: t('study.levelTitle') }, [el('span', { text: t('settings.level') }), levelSel])
+    );
+  }
+
+  function showTab(id) {
+    tab = id;
+    if (id !== 'speak') stopClip();
+    speakPane.classList.toggle('hidden', id !== 'speak');
+    varyPane.classList.toggle('hidden', id !== 'vary');
+    if (id === 'vary' && !varyMounted) {
+      varyMounted = true;
+      mountVary(varyBody, { text: source.text, context: source.context || '' });
+    }
+    drawTabs();
+  }
 
   async function load(fresh = false) {
     body.replaceChildren(el('p.muted', { text: t('study.loading') }));
     summary.replaceChildren();
+    info.replaceChildren();
     try {
       data = await api('/api/ai/drill', { method: 'POST', body: { text: source.text, context: source.context || '', fresh } });
     } catch (err) {
@@ -124,7 +161,7 @@ export function renderStudy(root, { source, back, hasProject }) {
     focus = null;
     info.replaceChildren(
       el('div.vary-pattern', {}, [
-        el('span.vary-label', { text: t('vary.title') }), el('strong', { text: data.pattern }), el('span.badge', { text: data.level }),
+        el('span.vary-label', { text: t('vary.title') }), el('strong', { text: data.pattern }),
         data.provider ? el('span.provider-chip', { text: providerName(data.provider), title: t('ai.madeBy', { provider: providerName(data.provider) }) }) : null
       ]),
       el('p.vary-explain', { text: data.explanation })
@@ -274,7 +311,7 @@ export function renderStudy(root, { source, back, hasProject }) {
 
   // One-by-one mode keys: M speak · Space show · 1 knew · 2 didn't · ← → move
   const onKey = (e) => {
-    if (mode !== 'single' || !data || e.target.closest?.('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
+    if (tab !== 'speak' || mode !== 'single' || !data || e.target.closest?.('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
     const i = visibleSteps()[index];
     if (i === undefined) return;
     if (e.code === 'KeyM') { e.preventDefault(); state[i].say?.toggle(); }
@@ -287,6 +324,7 @@ export function renderStudy(root, { source, back, hasProject }) {
   };
   document.addEventListener('keydown', onKey);
 
+  drawTabs();
   load();
   return async () => {
     document.removeEventListener('keydown', onKey);

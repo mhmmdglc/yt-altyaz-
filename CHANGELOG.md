@@ -9,6 +9,8 @@ All notable changes to this project are documented here. The format follows [Kee
 - A small **Gemini / DeepSeek** chip on Vary and Study answers; Settings shows when Gemini is paused, and each provider has its own **Test** button.
 
 ### Changed
+- **Vary and Study are one page**: 🎯 opens a page with a 🎤 Speak tab and a ✨ Vary tab, so a sentence can be understood, varied and spoken in one place. The separate ✨ button on cards and favorites is gone.
+- The level (A2–C1) moved from the top bar to that page, next to the tabs; it is still shown in Settings.
 - AI error messages no longer name Gemini, since either provider may have answered.
 
 ## [1.2.0] - 2026-10-21

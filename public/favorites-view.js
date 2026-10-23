@@ -4,7 +4,6 @@ import { el, fmtTime, toast, setChildren } from './util.js';
 import { playClip, speak, stopClip, playingKey } from './clip.js';
 import { getFavorites, dueFavorites, removeFav, reviewFav, onFavoritesChange } from './fav-store.js';
 import { schedule, GRADES } from './srs.js';
-import { openVary, closeVary } from './vary.js';
 import { sayWidget } from './study.js';
 
 const lower = (s) => String(s || '').toLocaleLowerCase();
@@ -77,7 +76,6 @@ export function renderFavorites(root, { hasProject, openVideoAt }) {
         el('button.btn.btn-sm', { text: '🎯 ' + t('card.studyShort'), title: t('card.study'), onclick: () => document.dispatchEvent(new CustomEvent('app:study', { detail: {
           text: x.text, tr: x.tr, projectId: x.kind === 'video' ? x.projectId : null, start: x.start, end: x.end, back: 'favorites'
         } })) }),
-        el('button.btn.btn-sm', { text: '✨ ' + t('card.varyShort'), title: t('card.vary'), onclick: () => openVary(li, { text: x.text }) }),
         x.kind === 'video' && !missing ? el('button.btn.btn-sm', { text: t('fav.open'), onclick: () => openVideoAt(x.projectId, x.start) }) : null,
         el('button.icon-btn.danger', { text: '🗑', title: t('fav.remove'), 'aria-label': t('fav.remove'), onclick: async () => {
           stopClip();
@@ -99,7 +97,6 @@ export function renderFavorites(root, { hasProject, openVideoAt }) {
     list.replaceChildren(...shown.map(item));
   }
 
-  closeVary();
   draw();
   return onFavoritesChange(draw); // the caller unsubscribes when leaving the page
 }

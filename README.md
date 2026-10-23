@@ -147,15 +147,15 @@ Press ☆ on a card to save a sentence (on a card with several sentences you pic
 
 ### 7. Vary a sentence (optional, Gemini)
 
-Press ✨ on a card. You get the grammar pattern of the sentence, a short explanation in your language, and new example sentences with the same pattern at your level (pattern words highlighted, 🔊 to hear them, ☆ to save them); **＋ More examples** writes new ones. Below them are **real sentences with the same pattern from your other videos**, which you can play with their original audio.
+Press 🎯 on a card and open the **✨ Vary** tab. You get the grammar pattern of the sentence, a short explanation in your language, and new example sentences with the same pattern at your level (pattern words highlighted, 🔊 to hear them, ☆ to save them); **＋ More examples** writes new ones. Below them are **real sentences with the same pattern from your other videos**, which you can play with their original audio.
 
 <img src="docs/img/vary.png" alt="Vary: the pattern, an explanation and new examples with the pattern highlighted" width="760"/>
 
-Choose your level (A2, B1, B2, C1) in the top bar. Vary needs a free Gemini API key: put `GEMINI_API_KEY=…` in a `.env` file in the project folder, or paste it in **⚙ Settings**. Add a `DEEPSEEK_API_KEY` too and DeepSeek takes over whenever Gemini's quota runs out. [docs/AI.md](docs/AI.md) explains what is sent and what it costs.
+Choose your level (A2, B1, B2, C1) on the same page, next to the tabs. Vary needs a free Gemini API key: put `GEMINI_API_KEY=…` in a `.env` file in the project folder, or paste it in **⚙ Settings**. Add a `DEEPSEEK_API_KEY` too and DeepSeek takes over whenever Gemini's quota runs out. [docs/AI.md](docs/AI.md) explains what is sent and what it costs.
 
 ### 8. Study a sentence by speaking (optional, Gemini)
 
-Press 🎯 on a card (or **🎯 Study this pattern** in Vary, or 🎯 on a favorite). A study page opens with a **speaking ladder** built from that sentence: the simplest core first, then other subjects, negative, question, added details, and finally the full sentence and a little beyond.
+Press 🎯 on a card (or on a favorite). A study page opens with a **speaking ladder** built from that sentence: the simplest core first, then other subjects, negative, question, added details, and finally the full sentence and a little beyond.
 
 For each step you see the sentence **in your language**; the English is blurred.
 

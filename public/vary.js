@@ -1,39 +1,24 @@
-// "✨ Vary": the grammar pattern of a sentence, new example sentences in the same pattern, and real examples from your videos.
+// "✨ Vary" (a tab of the Study page): new example sentences in the same pattern, and real examples from your videos.
 import { t } from './i18n.js';
 import { api, el, toast, highlightPattern, stripMarks, setChildren, providerName } from './util.js';
 import { playClip, speak, stopClip, playingKey } from './clip.js';
 import { addExampleFav, addVideoFav, findExampleFav, findVideoFav } from './fav-store.js';
 
-let open = null; // { panel, token }
-
-export function closeVary() {
-  if (!open) return;
-  open.panel.remove();
-  open = null;
-}
-
 const openSettings = () => document.dispatchEvent(new CustomEvent('app:open-settings', { detail: { section: 'ai' } }));
 
-// Renders the panel at the end of `container` (a card or a favorite) for one English sentence.
-export async function openVary(container, { text, context = '' }) {
-  closeVary();
-  const panel = el('div.vary-panel', { onclick: (e) => e.stopPropagation() });
-  const state = { token: Symbol('vary') };
-  open = { panel, token: state.token };
-  container.appendChild(panel);
-  const header = el('div.vary-head', {}, [
-    el('span.vary-source', { text: `“${text}”` }),
-    el('button.btn.btn-sm.btn-ghost.vary-x', { text: '×', title: t('common.close'), 'aria-label': t('common.close'), onclick: closeVary })
-  ]);
-  const body = el('div.vary-body', {}, [el('p.muted.vary-wait', { text: t('vary.loading') })]);
-  panel.append(header, body);
-  panel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+// Fills `body` with new example sentences in the pattern of one English sentence and real examples from your videos.
+// Calling it again on the same body (for example after a level change) replaces what was there.
+export async function mountVary(body, { text, context = '' }) {
+  const token = Symbol('vary');
+  body._varyToken = token;
+  const alive = () => body._varyToken === token && body.isConnected;
+  setChildren(body, el('p.muted.vary-wait', { text: t('vary.loading') }));
 
   const load = async (more = false) => {
     try {
       return await api('/api/ai/vary', { method: 'POST', body: { text, context, more } });
     } catch (err) {
-      if (open?.token !== state.token) return null;
+      if (!alive()) return null;
       setChildren(body,
         el('p.vary-error', { text: `⚠️ ${err.code === 'NO_AI_KEY' ? t('vary.needKey') : err.message}` }),
         ['NO_AI_KEY', 'AI_KEY_INVALID', 'AI_MODEL', 'NO_LANG'].includes(err.code)
@@ -44,27 +29,23 @@ export async function openVary(container, { text, context = '' }) {
   };
 
   const data = await load();
-  if (!data || open?.token !== state.token) return;
-  render(body, data);
+  if (!data || !alive()) return;
+  render(data);
 
-  function render(target, d) {
+  function render(d) {
     const examples = el('ol.vary-examples', {}, d.examples.map((ex) => exampleItem(ex, d.pattern, text)));
     const moreBtn = el('button.btn.btn-sm', { text: t('vary.more'), onclick: async () => {
       moreBtn.disabled = true;
       moreBtn.textContent = t('vary.loading');
       const next = await load(true);
-      if (next && open?.token === state.token) render(target, next);
+      if (next && alive()) render(next);
+      else if (alive()) { moreBtn.disabled = false; moreBtn.textContent = t('vary.more'); }
     } });
-    target.replaceChildren(
-      el('div.vary-pattern', {}, [
-        el('span.vary-label', { text: t('vary.title') }), el('strong', { text: d.pattern }), el('span.badge', { text: d.level }),
-        d.provider ? el('span.provider-chip', { text: providerName(d.provider), title: t('ai.madeBy', { provider: providerName(d.provider) }) }) : null
-      ]),
-      el('p.vary-explain', { text: d.explanation }),
+    setChildren(body,
       examples,
       el('div.vary-actions', {}, [
         moreBtn,
-        el('button.btn.btn-sm.btn-primary', { text: t('study.fromVary'), onclick: () => document.dispatchEvent(new CustomEvent('app:study', { detail: { text } })) }),
+        d.provider ? el('span.provider-chip', { text: providerName(d.provider), title: t('ai.madeBy', { provider: providerName(d.provider) }) }) : null,
         el('span.muted.small', { text: t('vary.aiNote') })
       ]),
       libraryBlock(d.library || [])

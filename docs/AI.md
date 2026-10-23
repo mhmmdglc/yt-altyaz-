@@ -47,7 +47,7 @@ The app talks to DeepSeek's OpenAI-compatible `chat/completions` endpoint in JSO
 
 ## Level
 
-Choose your English level (A2, B1, B2, C1; default B1) in the top bar or in Settings. Explanations and example sentences are written for that level.
+Choose your English level (A2, B1, B2, C1; default B1) on the Study page (next to the Speak and Vary tabs) or in Settings. Explanations and example sentences are written for that level.
 
 ## What is sent to Google (or DeepSeek)
 

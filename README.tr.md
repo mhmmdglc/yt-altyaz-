@@ -147,15 +147,15 @@ Bir cümleyi kaydetmek için karttaki ☆'ye bas (birden çok cümleli kartta ha
 
 ### 7. Bir cümleyi çeşitle (opsiyonel, Gemini)
 
-Bir kartta ✨'e bas. Cümlenin gramer kalıbı, kendi dilinde kısa bir açıklama ve seviyene uygun, aynı kalıpla yazılmış yeni örnek cümleler gelir (kalıp kelimeleri vurgulu, 🔊 ile dinle, ☆ ile kaydet). **＋ Daha fazla örnek** yenilerini yazar. Altında **diğer videolarından aynı kalıbı kullanan gerçek cümleler** var, orijinal sesleriyle dinleyebilirsin.
+Bir kartta 🎯'e bas ve **✨ Çeşitle** sekmesini aç. Cümlenin gramer kalıbı, kendi dilinde kısa bir açıklama ve seviyene uygun, aynı kalıpla yazılmış yeni örnek cümleler gelir (kalıp kelimeleri vurgulu, 🔊 ile dinle, ☆ ile kaydet). **＋ Daha fazla örnek** yenilerini yazar. Altında **diğer videolarından aynı kalıbı kullanan gerçek cümleler** var, orijinal sesleriyle dinleyebilirsin.
 
 <img src="docs/img/vary-tr.png" alt="Çeşitle: kalıp, açıklama ve kalıbı vurgulanmış yeni örnekler" width="760"/>
 
-Seviyeni (A2, B1, B2, C1) üst menüden seç. Çeşitle ücretsiz bir Gemini API anahtarı ister: proje klasöründe bir `.env` dosyasına `GEMINI_API_KEY=…` yaz ya da **⚙ Ayarlar**'a yapıştır. Bir de `DEEPSEEK_API_KEY` eklersen Gemini kotası dolduğunda DeepSeek hemen devralır. Neyin gönderildiği ve ücreti [docs/AI.md](docs/AI.md) içinde (İngilizce).
+Seviyeni (A2, B1, B2, C1) aynı sayfada, sekmelerin yanından seç. Çeşitle ücretsiz bir Gemini API anahtarı ister: proje klasöründe bir `.env` dosyasına `GEMINI_API_KEY=…` yaz ya da **⚙ Ayarlar**'a yapıştır. Bir de `DEEPSEEK_API_KEY` eklersen Gemini kotası dolduğunda DeepSeek hemen devralır. Neyin gönderildiği ve ücreti [docs/AI.md](docs/AI.md) içinde (İngilizce).
 
 ### 8. Bir cümleyi konuşarak çalış (opsiyonel, Gemini)
 
-Bir kartta 🎯'e bas (ya da Çeşitle'de **🎯 Bu kalıpla çalış**, ya da bir favoride 🎯). O cümleden kurulmuş bir **konuşma merdiveniyle** çalışma ekranı açılır: önce en basit çekirdek, sonra diğer kişiler, olumsuz, soru, eklenen ayrıntılar ve en sonda tam cümle ve biraz ötesi.
+Bir kartta 🎯'e bas (ya da bir favoride 🎯). O cümleden kurulmuş bir **konuşma merdiveniyle** çalışma ekranı açılır: önce en basit çekirdek, sonra diğer kişiler, olumsuz, soru, eklenen ayrıntılar ve en sonda tam cümle ve biraz ötesi.
 
 Her adımda cümleyi **kendi dilinde** görürsün; İngilizcesi bulanıktır.
 

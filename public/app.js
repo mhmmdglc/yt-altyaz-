@@ -2,7 +2,6 @@ import { t, tn, getLang, setLang, applyI18n, localeOptions, languageName } from 
 import { $, fmtTime, toast, sleep, apiError, store, api, el, providerName } from './util.js';
 import { stopClip } from './clip.js';
 import { loadFavorites, dueFavorites, onFavoritesChange, findVideoFav, addVideoFav, removeFav } from './fav-store.js';
-import { openVary, closeVary } from './vary.js';
 import { renderFavorites, renderReview } from './favorites-view.js';
 import { renderStudy } from './study.js';
 
@@ -14,7 +13,6 @@ const els = {
   settingsBtn: $('#settingsBtn'),
   favBtn: $('#favBtn'),
   favBadge: $('#favBadge'),
-  levelSelect: $('#levelSelect'),
   levelSelect2: $('#levelSelect2'),
   favoritesView: $('#favoritesView'),
   reviewView: $('#reviewView'),
@@ -137,7 +135,6 @@ function showView(name) {
   if (name === 'workspace' && current) document.title = `${titleOf(current)} — YT Altyazı`;
   if (name !== 'workspace') {
     closeDrawer();
-    closeVary();
     savePos(true);
     els.video.pause();
     document.title = `YT Altyazı — ${t(name === 'study' ? 'study.title' : name === 'favorites' || name === 'review' ? 'fav.title' : 'home.title')}`;
@@ -169,7 +166,7 @@ async function route() {
     const back = studySource.back === 'favorites' || !studySource.projectId
       ? { label: t('review.back'), href: '#/favorites' }
       : { label: t('study.backVideo'), href: `#/v/${studySource.projectId}/t/${Number(studySource.start || 0).toFixed(2)}` };
-    leavePage = renderStudy(els.studyView, { source: studySource, back, hasProject });
+    leavePage = renderStudy(els.studyView, { source: studySource, back, hasProject, levels: levelList(), getLevel: currentLevel, setLevel });
     return;
   }
   if (hash.startsWith('#/favorites') || hash.startsWith('#/review')) {
@@ -245,7 +242,6 @@ async function openProject(id, at = null) {
   }
   savePos(true);
   stopLoop();
-  closeVary();
   pendingSeek = at;
 
   let p;
@@ -547,7 +543,7 @@ async function showWordPop(wEl, line) {
   ].filter(Boolean));
 }
 
-/* ---------- Card actions: ⭐ favorite, ✨ vary ---------- */
+/* ---------- Card actions: ⭐ favorite, 🎯 study ---------- */
 
 function closePickers() {
   document.querySelectorAll('.sent-pick').forEach((x) => x.remove());
@@ -561,7 +557,7 @@ function pickSentence(line, i, action) {
   const pop = el('div.sent-pick', { onclick: (e) => e.stopPropagation() }, [
     el('div.small.muted', { text: t('card.pick') }),
     ...sents.map((text, k) => el(`button.sent-pick-item.s.sc${k % SENT_COLORS}`, { onclick: () => { pop.remove(); runSentenceAction(line, i, k, action); } }, [
-      action === 'fav' ? (findVideoFav(current.id, i, k) ? '★ ' : '☆ ') : action === 'study' ? '🎯 ' : '✨ ', text
+      action === 'fav' ? (findVideoFav(current.id, i, k) ? '★ ' : '☆ ') : '🎯 ', text
     ]))
   ]);
   line.appendChild(pop);
@@ -570,11 +566,6 @@ function pickSentence(line, i, action) {
 async function runSentenceAction(line, i, k, action) {
   const sents = sentencesOf(current.segments[i]);
   if (action === 'study') return openStudy(studySourceOf(i, k));
-  if (action === 'vary') {
-    const prev = k > 0 ? sents[k - 1] : i > 0 ? sentencesOf(current.segments[i - 1]).at(-1) : '';
-    manualScrollAt = Date.now() + 60_000; // keep the panel in view while reading
-    return openVary(line, { text: sents[k], context: prev });
-  }
   try {
     const existing = findVideoFav(current.id, i, k);
     if (existing) {
@@ -605,7 +596,7 @@ function studySourceOf(i, k) {
   };
 }
 
-// "🎯" from the Vary panel or a favorite. A sentence of the open video keeps its audio and its way back.
+// "🎯" from a favorite. A sentence of the open video keeps its audio and its way back.
 document.addEventListener('app:study', (e) => {
   const d = e.detail || {};
   if (!d.back && current && !els.workspace.classList.contains('hidden')) {
@@ -669,9 +660,8 @@ function renderLine(seg, i) {
   });
 
   const favBtn = el('button.card-btn.fav-btn', { text: '☆', title: t('card.fav'), 'aria-label': t('card.fav'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'fav'); } });
-  const varyBtn = el('button.card-btn.vary-btn', { text: '✨', title: t('card.vary'), 'aria-label': t('card.vary'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'vary'); } });
   const studyBtn = el('button.card-btn.study-btn', { text: '🎯', title: t('card.study'), 'aria-label': t('card.study'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'study'); } });
-  row.append(time, text, el('div.card-actions', {}, [favBtn, varyBtn, studyBtn, replay]));
+  row.append(time, text, el('div.card-actions', {}, [favBtn, studyBtn, replay]));
   line.appendChild(row);
 
   const tr = document.createElement('div');
@@ -917,10 +907,11 @@ function fillSettings(firstRun) {
 }
 
 /* ---------- AI (Gemini) settings and level ---------- */
+const levelList = () => settings.levels || ['A2', 'B1', 'B2', 'C1'];
+const currentLevel = () => settings.level || 'B1';
+
 function fillLevels() {
-  for (const select of [els.levelSelect, els.levelSelect2]) {
-    select.replaceChildren(...(settings.levels || ['A2', 'B1', 'B2', 'C1']).map((l) => new Option(l, l, false, l === (settings.level || 'B1'))));
-  }
+  els.levelSelect2.replaceChildren(...levelList().map((l) => new Option(l, l, false, l === currentLevel())));
 }
 
 function fillAI() {
@@ -957,12 +948,20 @@ async function saveSetting(patch, okMessage = t('toast.saved')) {
   }
 }
 
-async function changeLevel(level) {
-  if (await saveSetting({ level })) closeVary();
+// Level changed on the Study page: no "saved" toast, the page reloads its own content
+async function setLevel(level) {
+  try {
+    await api('/api/settings', { method: 'PUT', body: { level } });
+    await loadSettings();
+    fillLevels();
+    return true;
+  } catch (err) {
+    toast(`⚠️ ${err.message}`);
+    return false;
+  }
 }
 
-els.levelSelect.addEventListener('change', () => changeLevel(els.levelSelect.value));
-els.levelSelect2.addEventListener('change', () => changeLevel(els.levelSelect2.value));
+els.levelSelect2.addEventListener('change', () => saveSetting({ level: els.levelSelect2.value }));
 els.aiKeySave.addEventListener('click', async () => {
   const key = els.aiKeyInput.value.trim();
   if (!key) return els.aiKeyInput.focus();
@@ -1116,7 +1115,6 @@ document.addEventListener('keydown', (e) => {
     closeWordPop();
     closePickers();
     closeDrawer();
-    closeVary();
     if (!els.settings.classList.contains('hidden')) return closeSettings();
     return closeModal();
   }
