@@ -24,6 +24,7 @@
         "start": "node server.js --open",
         "dev": "node --watch server.js",
         "setup": "node scripts/setup.mjs",
+        "shortcut": "node scripts/shortcut.mjs",
         "doctor": "node scripts/doctor.mjs",
         "translator": "node scripts/translator.mjs",
         "regroup": "node scripts/regroup.mjs",

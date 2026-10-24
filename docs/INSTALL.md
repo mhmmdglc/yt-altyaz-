@@ -28,7 +28,13 @@ brew install node ffmpeg yt-dlp whisper-cpp llama.cpp
 
 Apple Silicon uses the GPU (Metal) for both Whisper and the translation model. Intel Macs work but are much slower.
 
-**Double-click app (optional):** `scripts/create-macos-app.sh` puts a *YT Altyazı* app on your Desktop that starts the server and opens the browser. Use `--browser "Google Chrome"` to choose a browser. If you move the project folder, run the script again.
+**Desktop shortcut (optional):** `npm run setup` offers it at the end (answer *Y*). You can add it any time with:
+
+```bash
+npm run shortcut
+```
+
+It puts a *YT Altyazı* shortcut on your Desktop that starts the server and opens the browser: an app on macOS (`npm run shortcut -- --browser "Google Chrome"` chooses the browser), a `.lnk` shortcut on Windows, a `.desktop` launcher on Linux (also in the applications menu; if your desktop calls it untrusted, right-click it and choose *Allow Launching*). The shortcut points at this folder and at the Node.js that created it: if you move either, run `npm run shortcut` again. `npm run setup -- --shortcut` creates it without asking, `--no-shortcut` never asks. The Windows and Linux shortcuts are written to the platforms' documented formats but have not been tried on real machines yet; please report problems.
 
 ## Linux (not yet tested end-to-end)
 

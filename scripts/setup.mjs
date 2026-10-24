@@ -6,6 +6,8 @@
 //   npm run setup -- --whisper small.en      choose the Whisper model: medium.en | small.en | base.en
 //   npm run setup -- --translator --accept-hymt-license   also download the translation model (1.9 GB)
 //   npm run setup -- --no-translator         skip the translation model question
+//   npm run setup -- --shortcut              also put a shortcut on the Desktop (asked at the end when interactive)
+//   npm run setup -- --no-shortcut           never ask about the shortcut
 import { createInterface } from 'node:readline/promises';
 import { execSync } from 'node:child_process';
 import path from 'node:path';
@@ -97,5 +99,16 @@ Optional: local translation of subtitles into your language (HY-MT1.5-1.8B, ~1.9
   }
 }
 
+if (flag('shortcut') || (interactive && !flag('no-shortcut'))) {
+  if (flag('shortcut') || yes(await ask('\nPut a "YT Altyazı" shortcut on your Desktop (starts the app and opens the browser)? [Y/n]', 'y'))) {
+    try {
+      const { createShortcut } = await import('./shortcut.mjs');
+      for (const f of createShortcut()) console.log(`✓ Shortcut: ${f}`);
+    } catch (e) {
+      console.log(`– Could not create the shortcut (${e.message}). You can try again with: npm run shortcut`);
+    }
+  }
+}
+
 rl?.close();
-console.log('\nAll set. Start the app with:  npm start\n');
+console.log('\nAll set. Start the app with:  npm start   (or use the Desktop shortcut; add one later with: npm run shortcut)\n');

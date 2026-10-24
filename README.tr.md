@@ -181,7 +181,7 @@ Her adımda cümleyi **kendi dilinde** görürsün; İngilizcesi bulanıktır.
 
 Daha fazla ayrıntı: [docs/USAGE.md](docs/USAGE.md) (İngilizce).
 
-**macOS'ta çift tıklanan uygulama:** `scripts/create-macos-app.sh --browser "Google Chrome"` masaüstüne, sunucuyu başlatıp tarayıcıda açan bir uygulama koyar.
+**Masaüstü kısayolu:** `npm run setup` sonunda sorar (*Y* de). Sonradan `npm run shortcut` ile de eklenir: macOS'ta uygulama (`-- --browser "Google Chrome"` ile tarayıcı seçilir), Windows'ta `.lnk`, Linux'ta `.desktop` dosyası. Kısayol sunucuyu başlatıp tarayıcıda açar. Proje klasörünü taşırsan komutu yeniden çalıştır.
 
 ## Nasıl çalışır
 
