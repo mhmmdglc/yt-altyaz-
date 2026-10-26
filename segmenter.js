@@ -17,7 +17,14 @@ export const CARD = {
   minPunctDensity: 1 / 40, // "pause mode" when there are fewer sentence ends per word than this
   pauseBreak: 0.35, // s: a silence this long is a sentence boundary (pause mode only)
   minSentenceWords: 5, // fewest words in a sentence derived from pauses
-  maxUnpunctuated: 200 // chars: a "sentence" longer than this AND without , ; : is unpunctuated speech and is split at pauses
+  maxUnpunctuated: 200, // chars: a "sentence" longer than this AND without , ; : is unpunctuated speech and is split at pauses
+  // Speakers sometimes chain a dozen clauses with commas into one 70-100 word "sentence". Above maxSentenceWords it is split at
+  // the best clause boundary (a comma, ideally with a pause) into pieces of about targetClauseWords words.
+  maxSentenceWords: 32,
+  targetClauseWords: 16,
+  minClauseWords: 8,
+  maxClauseWords: 28,
+  clausePause: 0.5 // s: a pause this long is a clause boundary even without a comma
 };
 
 const ABBREVIATIONS = new Set(['mr.', 'mrs.', 'ms.', 'dr.', 'prof.', 'st.', 'vs.', 'e.g.', 'i.e.', 'a.m.', 'p.m.', 'u.s.', 'no.']);
@@ -85,9 +92,38 @@ export function punctuationDensity(words) {
 export function wordsToSentences(words, silences = [], opts = {}) {
   const cfg = { ...CARD, ...opts };
   const pauseMode = punctuationDensity(words) < cfg.minPunctDensity;
-  const pausesAfter = (word) =>
-    silences.some((x) => x.a >= word.s - 0.05 && x.a <= word.e + 0.3 && x.b - x.a >= cfg.pauseBreak);
+  // Length (s) of the longest silence that starts at or just after this word
+  const gapAfter = (word) =>
+    silences.reduce((m, x) => (x.a >= word.s - 0.05 && x.a <= word.e + 0.3 ? Math.max(m, x.b - x.a) : m), 0);
+  const pausesAfter = (word) => gapAfter(word) >= cfg.pauseBreak;
   const make = (ws) => ({ words: ws, text: ws.map((x) => x.w).join(' ') });
+
+  // A very long comma-chained sentence is cut at clause boundaries (comma or pause) into readable pieces
+  const isClauseEnd = (word) => /[,;:]["'”’)\]]*$/.test(word.w);
+  function splitLong(sent) {
+    const ws = sent.words;
+    if (ws.length <= cfg.maxSentenceWords) return [sent];
+    const parts = [];
+    let start = 0;
+    while (ws.length - start > cfg.maxSentenceWords) {
+      let best = -1;
+      let bestScore = -Infinity;
+      const lo = start + cfg.minClauseWords - 1;
+      const hi = Math.min(start + cfg.maxClauseWords - 1, ws.length - cfg.minClauseWords - 1);
+      for (let i = lo; i <= hi; i++) {
+        const gap = gapAfter(ws[i]);
+        const comma = isClauseEnd(ws[i]);
+        if (!comma && gap < cfg.clausePause) continue;
+        const score = Math.min(gap, 1.6) * 8 + (comma ? 3 : 0) - Math.abs(i - start + 1 - cfg.targetClauseWords) * 0.4;
+        if (score > bestScore) { bestScore = score; best = i; }
+      }
+      if (best < 0) break; // no clause boundary in reach: keep the rest whole
+      parts.push(make(ws.slice(start, best + 1)));
+      start = best + 1;
+    }
+    parts.push(make(ws.slice(start)));
+    return parts;
+  }
 
   const sentences = [];
   let cur = [];
@@ -102,7 +138,7 @@ export function wordsToSentences(words, silences = [], opts = {}) {
 
   // Safety net: split long unpunctuated stretches (the recording stopped punctuating, or recited prayers) at pauses.
   // Long sentences with commas are real sentences and are never split.
-  return sentences.flatMap((sent) => {
+  return sentences.flatMap((sent) => splitLong(sent)).flatMap((sent) => {
     if (sent.text.length <= cfg.maxUnpunctuated || /[,;:]/.test(sent.text)) return [sent];
     const parts = [];
     let chunk = [];

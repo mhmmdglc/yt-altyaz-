@@ -56,7 +56,7 @@ test('buildCards never splits a sentence and never loses text', () => {
 });
 
 test('cards respect the size limits, but a long sentence keeps its own card', () => {
-  const long = 'This is a very long sentence ' + 'with plenty of words, '.repeat(12) + 'that never ends early.';
+  const long = 'This is a very long sentence ' + 'with extraordinarily elaborate vocabulary, '.repeat(5) + 'that never ends early.';
   const cards = buildCards(makeWords(`Hi there. Yes. ${long} After that. Done.`), []);
   for (const c of cards) {
     assert.ok(c.sents.length <= CARD.maxSentences);
@@ -121,11 +121,32 @@ test('safety net: a long run of speech without any punctuation is split at pause
   assert.equal(pieces.join(' '), run);
 });
 
-test('a long sentence WITH commas is a real sentence and stays whole', () => {
-  const run = Array.from({ length: 45 }, (_, i) => `comma${i},`).join(' ').replace(/,$/, '.');
+test('a sentence with commas up to 32 words is a real sentence and stays whole', () => {
+  const run = Array.from({ length: 30 }, (_, i) => `comma${i},`).join(' ').replace(/,$/, '.');
   const { words, silences } = recordingWithRun(run);
   const pieces = wordsToSentences(words, silences).map((s) => s.text).filter((x) => x.includes('comma'));
   assert.equal(pieces.length, 1);
+});
+
+test('a comma-chained run-on of 70+ words is cut at commas into readable pieces, without losing a word', () => {
+  const run = Array.from({ length: 75 }, (_, i) => `word${i}${i % 4 === 3 ? ',' : ''}`).join(' ') + '.';
+  const sentences = wordsToSentences(makeWords(run));
+  assert.ok(sentences.length >= 3, `expected a split, got ${sentences.length}`);
+  assert.equal(sentences.map((x) => x.text).join(' '), run);
+  sentences.slice(0, -1).forEach((x) => assert.match(x.text, /,$/, 'cut right after a comma'));
+  sentences.forEach((x) => {
+    const n = x.words.length;
+    assert.ok(n >= CARD.minClauseWords && n <= CARD.maxSentenceWords, `piece of ${n} words`);
+  });
+});
+
+test('the clause cut prefers a comma that is followed by a pause', () => {
+  const run = Array.from({ length: 60 }, (_, i) => `w${i}${i % 3 === 2 ? ',' : ''}`).join(' ') + '.';
+  // pause after word 20 (a comma word: 20 % 3 === 2) is longer than the usual cut near 16 words
+  const words = makeWords(run, { gaps: { 20: 0.9 } });
+  const silences = [{ a: words[20].e, b: words[20].e + 0.9 }];
+  const first = wordsToSentences(words, silences)[0];
+  assert.equal(first.words.length, 21);
 });
 
 test('every card has per-sentence times that stay inside the card and never overlap', () => {

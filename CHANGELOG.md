@@ -10,6 +10,9 @@ All notable changes to this project are documented here. The format follows [Kee
 - **`npm run package:mac`** builds a self-contained Apple Silicon app and a `.dmg` (macOS 13+; Node.js, yt-dlp, ffmpeg, whisper.cpp, llama.cpp and the models included) for people who should not need a terminal. See [docs/INSTALL.md](docs/INSTALL.md).
 - **Desktop shortcut**: `npm run setup` asks at the end whether to put a *YT Altyazı* shortcut on the Desktop; `npm run shortcut` does it any time (macOS app, Windows `.lnk`, Linux `.desktop`). A cross-platform `scripts/launch.mjs` starts the server and opens the browser. The Windows and Linux shortcuts are untested on real machines.
 
+### Fixed
+- Very long comma-chained "sentences" (70–100 words) are now cut at clause boundaries (a comma, preferably with a pause) into pieces of about 16 words, so cards stay readable and translations stay accurate. Sentences up to 32 words are untouched. Rebuild existing videos with `npm run regroup -- all`.
+
 ### Changed
 - **Vary and Study are one page**: 🎯 opens a page with a 🎤 Speak tab and a ✨ Vary tab, so a sentence can be understood, varied and spoken in one place. The separate ✨ button on cards and favorites is gone.
 - On the Study page, clicking a sentence (or *Show*) now reads it aloud; a **🔊 Click reads aloud** checkbox next to the tabs turns it off (remembered).

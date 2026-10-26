@@ -48,7 +48,7 @@ Sentences are added to a card in order, as long as **all** of these hold:
 | `maxDuration` | 10 s | a merged card never runs longer |
 | `startPad` / `endPad` | 0.12 / 0.18 s | padding around speech |
 
-A single sentence that is longer than these limits **keeps its own card and is not split**. Speakers sometimes chain 300–500 characters (up to 30 seconds) into one sentence with commas; such cards are long, by design.
+A single sentence that is longer than these limits **keeps its own card and is not split**, up to 32 words (`maxSentenceWords`). Above that it is a comma-chained run-on (speakers sometimes string 70–100 words together with commas) and is cut at the best clause boundary: a comma, preferably followed by a pause (`clausePause`, 0.5 s), into pieces of about 16 words (`targetClauseWords`, between 8 and 28). Each piece is a sentence of its own for colours, translation and Study; a normal sentence is never cut.
 
 Each card is stored as `{ start, end, text, sents: [sentence, …], sentTimes: [[start, end], …] }`. `sents` is the exact sentence list used for colours and for translation; `sentTimes` gives every sentence its own padded, non-overlapping time range, so a single sentence can be saved to favorites and played on its own.
 
@@ -57,7 +57,7 @@ Each card is stored as `{ start, end, text, sents: [sentence, …], sentTimes: [
 Some recordings come out without punctuation even with `-mc 0` (or the speaker recites without pauses). Two safety nets exist:
 
 - **Pause mode.** If a video has fewer than one sentence end per 40 words (`minPunctDensity`), sentence boundaries are taken from pauses of at least 0.35 s (`pauseBreak`), with at least 5 words per sentence (`minSentenceWords`). Well-punctuated videos are never affected. `npm run regroup` prints a warning when it switches to this mode.
-- **Long unpunctuated runs.** A "sentence" longer than 200 characters (`maxUnpunctuated`) **without any comma, semicolon or colon** is considered unpunctuated speech and is split at pauses. Long sentences *with* commas are real sentences and stay whole.
+- **Long unpunctuated runs.** A "sentence" longer than 200 characters (`maxUnpunctuated`) **without any comma, semicolon or colon** is considered unpunctuated speech and is split at pauses. Sentences *with* commas are split only when they exceed 32 words (see above).
 
 Continuous recitation without pauses (for example a chanted prayer) cannot be split and may stay one long card.
 

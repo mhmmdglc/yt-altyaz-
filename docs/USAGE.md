@@ -14,7 +14,7 @@ Videos must be spoken in **English** (the Whisper models are English-only).
 
 ## Cards, translation and colours
 
-Each card holds one or a few **whole sentences**; a sentence is never split across two cards. Below the English text you see the translation.
+Each card holds one or a few **whole sentences**; a sentence is never split across two cards (only comma-chained run-ons of more than 32 words are cut at a comma into shorter pieces). Below the English text you see the translation.
 
 - **Show translation** hides/shows all translations (the setting is remembered).
 - **Sentence colours:** when a card contains several sentences, each English sentence and its translation have the same colour (amber, mint, lilac). Switch it off for plain text.
