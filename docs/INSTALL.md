@@ -36,6 +36,21 @@ npm run shortcut
 
 It puts a *YT Altyazı* shortcut on your Desktop that starts the server and opens the browser: an app on macOS (`npm run shortcut -- --browser "Google Chrome"` chooses the browser), a `.lnk` shortcut on Windows, a `.desktop` launcher on Linux (also in the applications menu; if your desktop calls it untrusted, right-click it and choose *Allow Launching*). The shortcut points at this folder and at the Node.js that created it: if you move either, run `npm run shortcut` again. `npm run setup -- --shortcut` creates it without asking, `--no-shortcut` never asks. The Windows and Linux shortcuts are written to the platforms' documented formats but have not been tried on real machines yet; please report problems.
 
+
+## Mac app for someone else (.dmg, no installation)
+
+To give the app to someone who does not use a terminal, build a self-contained Mac app on your Apple Silicon Mac:
+
+```bash
+npm run package:mac
+```
+
+The result is `dist/YT-Altyazi-<version>-macos-arm64.dmg` (about 3 GB). Open it, drag *YT Altyazı* to *Applications*, double-click. Nothing else has to be installed: Node.js, yt-dlp, ffmpeg, whisper.cpp, llama.cpp and the models are inside. It runs on **Apple Silicon (M1 or newer) with macOS 13 (Ventura) or newer**; Intel Macs are not supported. The app keeps running in the background until you quit it (⌘Q or Dock → Quit); videos and settings live in `~/Library/Application Support/YT Altyazı`, and API keys can go in a `.env` file there.
+
+How it is built: the first run downloads the sources of whisper.cpp, llama.cpp and ffmpeg and the official `yt-dlp_macos` (checked against its published SHA-256) and compiles them for macOS 13 (static, no Homebrew libraries; a few minutes); later runs only assemble the app. The models come from your own `models/` folder and `~/models/HY-MT1.5-1.8B` (`WHISPER_MODEL_FILE`, `TRANSLATOR_DIR` and `NO_TRANSLATOR=1` change that). The app is signed ad hoc only, so macOS asks for a one-time approval on the first launch (System Settings → Privacy & Security → *Open Anyway*); the dmg has a note about it in Turkish. The bundled Node.js is too old for yt-dlp's JavaScript challenge solver, so YouTube may offer fewer formats than with a full yt-dlp setup.
+
+The dmg contains third-party software and the HY-MT model: keep it for personal use, or read [THIRD_PARTY_NOTICES.md](../THIRD_PARTY_NOTICES.md) and the model license before sharing it (the HY-MT license excludes the EU, the UK and South Korea).
+
 ## Linux (not yet tested end-to-end)
 
 ```bash

@@ -25,10 +25,11 @@
         "dev": "node --watch server.js",
         "setup": "node scripts/setup.mjs",
         "shortcut": "node scripts/shortcut.mjs",
+        "package:mac": "sh scripts/package-macos.sh",
         "doctor": "node scripts/doctor.mjs",
         "translator": "node scripts/translator.mjs",
         "regroup": "node scripts/regroup.mjs",
-        "test": "node --test"
+        "test": "node --test test/"
     },
     "dependencies": {
         "express": "^4.21.2"

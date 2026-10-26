@@ -7,3 +7,7 @@ models/*
 *.log
 .env
 .DS_Store
+
+# build outputs and the packaging cache
+dist/
+.cache/
