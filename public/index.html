@@ -57,8 +57,10 @@
       </aside>
 
       <div class="pane video-pane">
-        <div class="video-frame">
-          <video id="video" controls playsinline preload="metadata"></video>
+        <div id="videoFrame" class="video-frame">
+          <video id="video" controls controlsList="nofullscreen" playsinline preload="metadata"></video>
+          <div id="capOverlay" class="cap-overlay" hidden><div id="capEn" class="cap-en"></div><div id="capTr" class="cap-tr"></div></div>
+          <button id="fsBtn" class="fs-btn" data-i18n-title="cap.fullscreen" data-i18n-aria="cap.fullscreen">⛶</button>
         </div>
         <div class="video-meta">
           <div class="video-meta-row">
@@ -78,11 +80,22 @@
             </div>
           </div>
         </div>
+        <div class="video-meta-row video-tools">
+          <div id="capSeg" class="seg cap-seg" role="group" data-i18n-title="cap.title" data-i18n-aria="cap.title">
+            <button data-cap="off" data-i18n="cap.off"></button>
+            <button data-cap="en" data-i18n="cap.en"></button>
+            <button data-cap="tr" data-i18n="cap.tr"></button>
+            <button data-cap="both" data-i18n="cap.both"></button>
+          </div>
+          <button id="panelBtn" class="btn btn-sm"></button>
+        </div>
         <div class="video-hint">
           <span><kbd>Space</kbd> <span data-i18n="hint.space"></span></span>
           <span><kbd>←</kbd><kbd>→</kbd> <span data-i18n="hint.arrows"></span></span>
           <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="hint.updown"></span></span>
           <span><kbd>V</kbd> <span data-i18n="hint.v"></span></span>
+          <span><kbd>C</kbd> <span data-i18n="hint.c"></span></span>
+          <span><kbd>P</kbd> <span data-i18n="hint.p"></span></span>
           <span data-i18n="hint.click"></span>
         </div>
       </div>

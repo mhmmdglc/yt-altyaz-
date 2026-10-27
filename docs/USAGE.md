@@ -78,6 +78,12 @@ See [AI.md](AI.md) for the key, privacy and cost.
 
 ## Text-only mode
 
+## Subtitles on the video, or only the video
+
+Under the video, **No subtitles / English / Translation / Both** (or `C`) draws the sentence being spoken on the picture, with its translation; for a card with several sentences it follows the sentence that is being said. **◧ Hide the list** (or `P`) hides the subtitle list, so you see only the video, large. The ⛶ button in the corner of the video goes fullscreen *with* the subtitles (the browser's own fullscreen button is removed because it would drop them). Both settings are remembered.
+
+## Text-only mode
+
 Press **🙈 Hide** (or `V`) to hide the video. The subtitle panel gets wider and a small player bar appears (play/pause, position, speed). The audio keeps playing. **🎬 Show video** or `V` brings the video back.
 
 ## Other things
@@ -94,6 +100,8 @@ Press **🙈 Hide** (or `V`) to hide the video. The subtitle panel gets wider an
 | `←` / `→` | 5 seconds back / forward |
 | `↑` / `↓` | previous / next card |
 | `V` | hide / show the video |
+| `C` | subtitles on the video: none → English → translation → both |
+| `P` | hide / show the subtitle list (video only) |
 | `Esc` | close a popup, the video list or a dialog |
 | `Space`, `1`–`4` | in Review: reveal, then rate |
 | `M`, `Space`, `L`, `1`/`2`, `←`/`→` | in Study (one by one): speak, show, listen, mark, move |

@@ -34,6 +34,7 @@ Sonra onunla çalışırsın: izlerken okursun, bir kelimeye tıklayıp anlamın
 - 🎯 **Konuşarak çalış** *(opsiyonel, Gemini)*: tek bir cümleyi konuşma merdivenine çevirir: en basit çekirdekten ("Gidiyorum.") başlayıp diğer kişiler, olumsuz, soru ve eklenen ayrıntılarla tam cümleye kadar. Her adımı kendi dilinde görürsün, **İngilizcesini söylersin**, sesin **bilgisayarında** (Whisper) kelime kelime kontrol edilir; sonra bulanık İngilizceyi açar, dinler ve tekrarlarsın.
 - ⭐ **Favoriler ve tekrar.** İstediğin cümleyi kaydet, aralıklı tekrarla çalış: dinle, söyle, çeviriyi aç, kendini değerlendir. Anki'ye aktarabilirsin.
 - ✨ **Çeşitle** *(opsiyonel, Gemini)*: cümlenin gramer kalıbını bulur, kendi dilinde açıklar, seviyene göre (A2–C1) aynı kalıpla yeni örnek cümleler yazar ve **diğer videolarından aynı kalıbı kullanan gerçek cümleleri** orijinal sesiyle gösterir.
+- 🎞 **Videonun üstünde altyazı** (`C`: İngilizce, çeviri ya da ikisi; tam ekranda da) ve yalnız video düzeni (`P` altyazı listesini gizler).
 - 📖 **Yalnız metin modu** (`V`): videoyu gizle, metinle çalış; küçük oynatıcı çubuğu sesi yönetir.
 - ⏯ Kaldığın yerden devam, 0,75×–1,5× hız, arama, klavye kısayolları.
 - 🔒 Tek seferlik model indirmesinden sonra **gizli ve çevrimdışı**. Yapay zekâ özellikleri isteğe bağlıdır ve yalnızca üzerinde çalıştığın cümleyi gönderir.
@@ -175,6 +176,8 @@ Her adımda cümleyi **kendi dilinde** görürsün; İngilizcesi bulanıktır.
 | `←` / `→` | 5 sn geri / ileri |
 | `↑` / `↓` | önceki / sonraki kart |
 | `V` | videoyu gizle / göster |
+| `C` | videoda altyazı: yok → İngilizce → çeviri → ikisi |
+| `P` | altyazı listesini gizle / göster (yalnız video) |
 | `Esc` | pencereyi / listeyi kapat |
 | `Space`, `1`–`4` | Tekrar ekranında: çeviriyi aç, sonra *Tekrar / Zor / İyi / Kolay* |
 | `M`, `Space`, `L`, `1`/`2`, `←`/`→` | Çalış ekranında (tek tek): söyle, göster, dinle, işaretle, geç |

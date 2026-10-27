@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 - **DeepSeek fallback** for the AI features: when Gemini cannot answer (quota used up, an error), the same request goes straight to DeepSeek, and after a quota error Gemini is skipped for 15 minutes. Key via `DEEPSEEK_API_KEY` or Settings; a DeepSeek key alone also works.
 - A small **Gemini / DeepSeek** chip on Vary and Study answers; Settings shows when Gemini is paused, and each provider has its own **Test** button.
+- **Subtitles on the video**: English, translation or both (`C`), following the sentence being spoken, also in fullscreen (our own ⛶ button), and **◧ Hide the list** (`P`) to see only the video.
 - **`npm run package:mac`** builds a self-contained Apple Silicon app and a `.dmg` (macOS 13+; Node.js, yt-dlp, ffmpeg, whisper.cpp, llama.cpp and the models included) for people who should not need a terminal. See [docs/INSTALL.md](docs/INSTALL.md).
 - **Desktop shortcut**: `npm run setup` asks at the end whether to put a *YT Altyazı* shortcut on the Desktop; `npm run shortcut` does it any time (macOS app, Windows `.lnk`, Linux `.desktop`). A cross-platform `scripts/launch.mjs` starts the server and opens the browser. The Windows and Linux shortcuts are untested on real machines.
 

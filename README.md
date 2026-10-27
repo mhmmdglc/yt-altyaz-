@@ -34,6 +34,7 @@ It is made for people who learn English by watching: talks, lectures, interviews
 - 🎯 **Study by speaking** *(optional, Gemini)*: turn one sentence into a speaking ladder, from its simplest core ("I'm going.") through other subjects, negative, question and added details up to the full sentence. You see each step in your language, **say it in English**, and your voice is checked word by word **on your computer** (Whisper); then reveal the blurred English, listen and repeat.
 - ⭐ **Favorites and review.** Save any sentence and review your sentences with spaced repetition: listen, say it, reveal the translation, rate yourself. Export them for Anki.
 - ✨ **Vary** *(optional, Gemini)*: finds the grammar pattern of a sentence, explains it in your language and writes new example sentences with the same pattern at your level (A2–C1), and shows **real sentences with the same pattern from your other videos**, playable with their original audio.
+- 🎞 **Subtitles on the video** (`C`: English, translation or both, also fullscreen) and a video-only layout (`P` hides the subtitle list).
 - 📖 **Text-only mode** (`V`): hide the video and work with the text; a small player bar keeps the audio under control.
 - ⏯ Resume where you stopped, 0.75×–1.5× speed, search, keyboard shortcuts.
 - 🔒 **Private and offline** after the one-time model download. The AI features are optional and send only the sentence you act on.
@@ -175,6 +176,8 @@ Switch between **List** and **One by one** (keys: `M` speak, `Space` show, `L` l
 | `←` / `→` | 5 seconds back / forward |
 | `↑` / `↓` | previous / next card |
 | `V` | hide / show the video |
+| `C` | subtitles on the video: none → English → translation → both |
+| `P` | hide / show the subtitle list (video only) |
 | `Esc` | close a popup, the video list or a dialog |
 | `Space`, `1`–`4` | in Review: reveal the translation, then rate *Again / Hard / Good / Easy* |
 | `M`, `Space`, `L`, `1`/`2`, `←`/`→` | in Study (one by one): speak, show, listen, mark, move |

@@ -33,6 +33,13 @@ const els = {
   drawerBackdrop: $('#drawerBackdrop'),
   sidebar: $('.sidebar'),
   hideVideoBtn: $('#hideVideoBtn'),
+  videoFrame: $('#videoFrame'),
+  capOverlay: $('#capOverlay'),
+  capEn: $('#capEn'),
+  capTr: $('#capTr'),
+  capSeg: $('#capSeg'),
+  panelBtn: $('#panelBtn'),
+  fsBtn: $('#fsBtn'),
   mpTitle: $('#mpTitle'),
   mpShowVideo: $('#mpShowVideo'),
   mpPlay: $('#mpPlay'),
@@ -94,6 +101,9 @@ let transcribing = false;
 let showTr = store('showTr') !== 'false';
 let colorSent = store('colorSent') !== 'false';
 let textMode = store('textMode') === 'true';
+const CAP_MODES = ['off', 'en', 'tr', 'both'];
+let capMode = CAP_MODES.includes(store('capMode')) ? store('capMode') : 'off'; // subtitles drawn on the video
+let subsHidden = store('subsHidden') === 'true'; // the subtitle list is hidden: only the video
 let trPollId = 0;
 let isAutoMode = store('autoMode') !== 'false';
 let playUntil = null;
@@ -460,17 +470,25 @@ function renderEnglish(target, seg) {
 }
 
 // Writes the translation, split into parts that share the colors of the English sentences
+// The translation of each sentence of a card, or null when they do not line up (never show a wrong pairing)
+function trPartsOf(seg) {
+  if (!seg.tr) return null;
+  const n = sentencesOf(seg).length;
+  let parts = seg.trParts;
+  if (!parts || parts.length !== n) {
+    const guess = splitSentences(seg.tr);
+    parts = guess.length === n ? guess : null;
+  }
+  return parts;
+}
+
 function renderTr(el, seg) {
   el.textContent = '';
   const lang = current?.trLang || settings.targetLang;
   if (lang) { el.lang = lang; el.dir = RTL_LANGUAGES.has(lang) ? 'rtl' : 'ltr'; }
   if (!seg.tr) return;
   const n = sentencesOf(seg).length;
-  let parts = seg.trParts;
-  if (!parts || parts.length !== n) {
-    const guess = splitSentences(seg.tr);
-    parts = guess.length === n ? guess : null; // no colouring when they do not line up (never show a wrong pairing)
-  }
+  const parts = trPartsOf(seg);
   if (n < 2 || !parts) { el.textContent = seg.tr; return; }
   parts.forEach((part, k) => {
     if (k) el.append(' ');
@@ -703,6 +721,61 @@ function updateActive() {
     activeIndex = idx;
     highlight(idx);
   }
+  updateCaption();
+}
+
+/* ---------- Subtitles on the video, hidden subtitle list ---------- */
+// What the overlay shows now: the sentence being spoken (and its translation) when the card has several, otherwise the card
+function captionNow() {
+  const seg = current?.segments[activeIndex];
+  const now = els.video.currentTime;
+  if (!seg || now > seg.end + 0.4) return null;
+  const sents = sentencesOf(seg);
+  const parts = trPartsOf(seg);
+  if (sents.length > 1 && parts && seg.sentTimes?.length === sents.length) {
+    let k = 0;
+    seg.sentTimes.forEach(([s], j) => { if (now >= s - 0.05) k = j; });
+    return { en: sents[k], tr: parts[k] };
+  }
+  return { en: seg.text, tr: seg.tr || '' };
+}
+
+let capKey = '';
+function updateCaption() {
+  const cap = capMode === 'off' ? null : captionNow();
+  const en = cap && (capMode === 'en' || capMode === 'both') ? cap.en : '';
+  const tr = cap && (capMode === 'tr' || capMode === 'both') ? cap.tr : '';
+  const key = `${en}\u0000${tr}`;
+  if (key === capKey) return;
+  capKey = key;
+  els.capEn.textContent = en;
+  els.capTr.textContent = tr;
+  els.capEn.hidden = !en;
+  els.capTr.hidden = !tr;
+  els.capOverlay.hidden = !en && !tr;
+  const lang = current?.trLang || settings.targetLang;
+  if (lang) { els.capTr.lang = lang; els.capTr.dir = RTL_LANGUAGES.has(lang) ? 'rtl' : 'ltr'; }
+}
+
+function setCapMode(mode) {
+  capMode = mode;
+  store('capMode', mode);
+  els.capSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.cap === mode));
+  capKey = '';
+  updateCaption();
+}
+
+function applyPanel() {
+  document.body.classList.toggle('subs-hidden', subsHidden);
+  els.panelBtn.textContent = subsHidden ? t('cap.panelShow') : t('cap.panelHide');
+  els.panelBtn.title = t('cap.panelTitle');
+  if (!subsHidden && els.subList.children.length) scrollToActive(true);
+}
+
+function togglePanel() {
+  subsHidden = !subsHidden;
+  store('subsHidden', subsHidden);
+  applyPanel();
 }
 
 function scrollToActive(force) {
@@ -1130,6 +1203,8 @@ document.addEventListener('keydown', (e) => {
   else if (e.code === 'ArrowUp') { e.preventDefault(); seekTo(Math.max(0, activeIndex - 1)); }
   else if (e.code === 'ArrowDown') { e.preventDefault(); seekTo(activeIndex + 1); }
   else if (e.code === 'KeyV') toggleTextMode();
+  else if (e.code === 'KeyC') setCapMode(CAP_MODES[(CAP_MODES.indexOf(capMode) + 1) % CAP_MODES.length]);
+  else if (e.code === 'KeyP') togglePanel();
 });
 
 function togglePlay() {
@@ -1181,6 +1256,8 @@ els.autoModeToggle.checked = isAutoMode;
 applyShowTr();
 applyColorSent();
 applyTextMode();
+setCapMode(capMode);
+applyPanel();
 
 els.trToggle.addEventListener('change', (e) => {
   showTr = e.target.checked;
@@ -1274,6 +1351,13 @@ els.drawerBtn.addEventListener('click', () => (els.sidebar.classList.contains('o
 els.drawerBackdrop.addEventListener('click', closeDrawer);
 $('#drawerHome').addEventListener('click', closeDrawer);
 els.hideVideoBtn.addEventListener('click', toggleTextMode);
+els.capSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-cap]'); if (b) setCapMode(b.dataset.cap); });
+els.panelBtn.addEventListener('click', togglePanel);
+// Our own fullscreen button: the browser's would show only the <video> and lose the subtitles
+els.fsBtn.addEventListener('click', () => {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else els.videoFrame.requestFullscreen?.().catch(() => {});
+});
 els.mpShowVideo.addEventListener('click', toggleTextMode);
 els.mpPlay.addEventListener('click', togglePlay);
 els.mpSeek.addEventListener('pointerdown', () => { seekDragging = true; });
