@@ -34,6 +34,7 @@ const els = {
   sidebar: $('.sidebar'),
   hideVideoBtn: $('#hideVideoBtn'),
   videoFrame: $('#videoFrame'),
+  videoClick: $('#videoClick'),
   capOverlay: $('#capOverlay'),
   capEn: $('#capEn'),
   capTr: $('#capTr'),
@@ -1205,6 +1206,19 @@ document.addEventListener('keydown', (e) => {
   else if (e.code === 'KeyV') toggleTextMode();
   else if (e.code === 'KeyC') setCapMode(CAP_MODES[(CAP_MODES.indexOf(capMode) + 1) % CAP_MODES.length]);
   else if (e.code === 'KeyP') togglePanel();
+  // YouTube-style keys
+  else if (e.code === 'KeyK') togglePlay();
+  else if (e.code === 'KeyJ') seekBy(-10);
+  else if (e.code === 'KeyL') seekBy(10);
+  else if (e.code === 'KeyF') toggleFullscreen();
+  else if (e.code === 'KeyM') els.video.muted = !els.video.muted;
+  else if (e.code === 'Home') { e.preventDefault(); els.video.currentTime = 0; }
+  else if (e.code === 'End') { e.preventDefault(); els.video.currentTime = Math.max(0, (els.video.duration || 0) - 0.1); }
+  else if (/^(Digit|Numpad)[0-9]$/.test(e.code)) { if (els.video.duration) els.video.currentTime = els.video.duration * Number(e.code.slice(-1)) / 10; }
+  else if (e.code === 'Comma' || e.code === 'Period') {
+    if (e.shiftKey) setRate(e.code === 'Comma' ? -1 : 1); // < and > change the speed
+    else if (els.video.paused) els.video.currentTime += e.code === 'Comma' ? -1 / 30 : 1 / 30; // frame by frame while paused
+  }
 });
 
 function togglePlay() {
@@ -1214,6 +1228,19 @@ function togglePlay() {
 }
 
 function seekBy(d) { els.video.currentTime = Math.max(0, els.video.currentTime + d); }
+
+// Steps through the speed buttons (0.75× … 1.5×)
+function setRate(step) {
+  const rates = [...document.querySelectorAll('.speed-seg button[data-rate]')].map((b) => Number(b.dataset.rate));
+  const i = rates.findIndex((r) => r === els.video.playbackRate);
+  const next = rates[Math.min(rates.length - 1, Math.max(0, (i < 0 ? rates.indexOf(1) : i) + step))];
+  if (next) els.video.playbackRate = next;
+}
+
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else els.videoFrame.requestFullscreen?.().catch(() => {});
+}
 
 /* ---------- Video list drawer ---------- */
 function openDrawer() {
@@ -1354,10 +1381,10 @@ els.hideVideoBtn.addEventListener('click', toggleTextMode);
 els.capSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-cap]'); if (b) setCapMode(b.dataset.cap); });
 els.panelBtn.addEventListener('click', togglePanel);
 // Our own fullscreen button: the browser's would show only the <video> and lose the subtitles
-els.fsBtn.addEventListener('click', () => {
-  if (document.fullscreenElement) document.exitFullscreen();
-  else els.videoFrame.requestFullscreen?.().catch(() => {});
-});
+els.fsBtn.addEventListener('click', toggleFullscreen);
+// Like YouTube: click the picture to pause / play, double-click for fullscreen (the two clicks cancel each other out)
+els.videoClick.addEventListener('click', togglePlay);
+els.videoClick.addEventListener('dblclick', toggleFullscreen);
 els.mpShowVideo.addEventListener('click', toggleTextMode);
 els.mpPlay.addEventListener('click', togglePlay);
 els.mpSeek.addEventListener('pointerdown', () => { seekDragging = true; });

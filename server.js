@@ -199,7 +199,9 @@ async function transcribeJob(jobId, url) {
 
     job.stage = 'download';
     try {
-      await run(bin.ytdlp, ['-f', 'bv*[height<=720]+ba/b[height<=720]/b', '--merge-output-format', 'mp4', '--no-playlist', '-o', videoPath, '--', url]);
+      // H.264 + AAC first: every browser plays it, and Whisper timed the audio of AV1 + Opus downloads wrongly in tests (a
+      // music intro shifted the first sentences by 12 s). Other codecs only when a video has no H.264/AAC version.
+      await run(bin.ytdlp, ['-f', 'bv*[height<=720][vcodec^=avc1]+ba[acodec^=mp4a]/b[height<=720][vcodec^=avc1][acodec^=mp4a]/bv*[height<=720]+ba/b[height<=720]/b', '--merge-output-format', 'mp4', '--no-playlist', '-o', videoPath, '--', url]);
     } catch {
       // On 403 and similar, retry with the Android client at lower quality
       await run(bin.ytdlp, ['-f', 'b', '--extractor-args', 'youtube:player_client=android', '--merge-output-format', 'mp4', '--force-overwrites', '--no-playlist', '-o', videoPath, '--', url]);

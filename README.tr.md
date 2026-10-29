@@ -172,7 +172,11 @@ Her adımda cümleyi **kendi dilinde** görürsün; İngilizcesi bulanıktır.
 
 | Tuş | İşlev |
 |---|---|
-| `Space` | oynat / duraklat |
+| `Space` / `K` | oynat / duraklat (videoya tıklamak da aynı; çift tık: tam ekran) |
+| `J` / `L` | 10 sn geri / ileri |
+| `F` / `M` | tam ekran (altyazı kalır) / sessiz |
+| `0`–`9` | videonun %0–%90'ına atla; `Home` / `End`: başa / sona |
+| `Shift`+`,` / `Shift`+`.` | yavaşlat / hızlandır; duraklatılmışken `,` `.` bir kare |
 | `←` / `→` | 5 sn geri / ileri |
 | `↑` / `↓` | önceki / sonraki kart |
 | `V` | videoyu gizle / göster |

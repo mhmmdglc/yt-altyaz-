@@ -7,11 +7,13 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 - **DeepSeek fallback** for the AI features: when Gemini cannot answer (quota used up, an error), the same request goes straight to DeepSeek, and after a quota error Gemini is skipped for 15 minutes. Key via `DEEPSEEK_API_KEY` or Settings; a DeepSeek key alone also works.
 - A small **Gemini / DeepSeek** chip on Vary and Study answers; Settings shows when Gemini is paused, and each provider has its own **Test** button.
+- **YouTube-style video**: click the picture to pause / play, double-click for fullscreen, `K` `J` `L` `F` `M`, `0`–`9`, `Home` / `End`, `Shift`+`,` / `.` for speed.
 - **Subtitles on the video**: English, translation or both (`C`), following the sentence being spoken, also in fullscreen (our own ⛶ button), and **◧ Hide the list** (`P`) to see only the video.
 - **`npm run package:mac`** builds a self-contained Apple Silicon app and a `.dmg` (macOS 13+; Node.js, yt-dlp, ffmpeg, whisper.cpp, llama.cpp and the models included) for people who should not need a terminal. See [docs/INSTALL.md](docs/INSTALL.md).
 - **Desktop shortcut**: `npm run setup` asks at the end whether to put a *YT Altyazı* shortcut on the Desktop; `npm run shortcut` does it any time (macOS app, Windows `.lnk`, Linux `.desktop`). A cross-platform `scripts/launch.mjs` starts the server and opens the browser. The Windows and Linux shortcuts are untested on real machines.
 
 ### Fixed
+- **Subtitles shifted by a music intro** (first sentences 12 s early): videos are now downloaded as H.264 + AAC when available. Without a JavaScript runtime yt-dlp chose AV1 + Opus, and Whisper then timed the first 30 s window wrongly on a TED talk with a music and applause intro. H.264/AAC also plays in every browser (AV1 does not play in Safari on M1/M2). Videos downloaded before this change can be added again.
 - Very long comma-chained "sentences" (70–100 words) are now cut at clause boundaries (a comma, preferably with a pause) into pieces of about 16 words, so cards stay readable and translations stay accurate. Sentences up to 32 words are untouched. Rebuild existing videos with `npm run regroup -- all`.
 
 ### Changed

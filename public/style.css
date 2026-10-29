@@ -996,3 +996,6 @@ a.btn { text-decoration: none; display: inline-flex; align-items: center; }
 body.subs-hidden:not(.text-mode) .subs-pane { display: none; }
 body.subs-hidden:not(.text-mode) .workspace { grid-template-columns: minmax(0, 1fr); max-width: 1500px; margin: 0 auto; }
 body.subs-hidden:not(.text-mode) .video-frame video { max-height: calc(100vh - 250px); }
+/* The picture itself: click = play / pause (the bottom strip stays free for the browser's own controls) */
+.video-click { position: absolute; inset: 0 0 56px 0; z-index: 1; cursor: pointer; }
+.cap-overlay, .fs-btn { z-index: 2; }

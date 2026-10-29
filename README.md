@@ -172,7 +172,11 @@ Switch between **List** and **One by one** (keys: `M` speak, `Space` show, `L` l
 
 | Key | Action |
 |---|---|
-| `Space` | play / pause |
+| `Space` / `K` | play / pause (clicking the picture does the same; double-click: fullscreen) |
+| `J` / `L` | 10 seconds back / forward |
+| `F` / `M` | fullscreen (keeps the subtitles) / mute |
+| `0`–`9` | jump to 0 %–90 % of the video; `Home` / `End`: start / end |
+| `Shift`+`,` / `Shift`+`.` | slower / faster; `,` `.` step a frame while paused |
 | `←` / `→` | 5 seconds back / forward |
 | `↑` / `↓` | previous / next card |
 | `V` | hide / show the video |
