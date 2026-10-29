@@ -4,7 +4,6 @@
 
 **Learn English from real videos, with subtitles that never cut a sentence in half, translation into your own language, and tools for shadowing. All of it runs on your computer.**
 
-[![CI](https://github.com/mhmmdglc/yt-altyaz-/actions/workflows/ci.yml/badge.svg)](https://github.com/mhmmdglc/yt-altyaz-/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Node 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)
 ![Runs locally](https://img.shields.io/badge/runs-100%25%20locally-6366f1.svg)

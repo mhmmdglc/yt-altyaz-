@@ -4,7 +4,6 @@
 
 **Gerçek videolardan İngilizce öğren: cümlesi yarıda kesilmeyen altyazılar, kendi dilinde çeviri ve shadowing araçları. Hepsi kendi bilgisayarında çalışır.**
 
-[![CI](https://github.com/mhmmdglc/yt-altyaz-/actions/workflows/ci.yml/badge.svg)](https://github.com/mhmmdglc/yt-altyaz-/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 ![Node 20+](https://img.shields.io/badge/node-%3E%3D20-brightgreen.svg)
 ![Yerelde çalışır](https://img.shields.io/badge/%25100-yerel-6366f1.svg)

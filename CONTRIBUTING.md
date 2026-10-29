@@ -18,7 +18,7 @@ The interface is plain JavaScript modules in `public/`; reload the page to see c
 
 ## Before you open a pull request
 
-- `npm test` passes (it runs on Linux, macOS and Windows in CI).
+- `npm test` passes.
 - If you change behavior, update the docs (`README.md`, `docs/`).
 - New interface text goes into **every** language in `public/locales.js` (`npm test` checks the keys).
 - Add a test when you fix a bug or add logic. Segmentation logic (`segmenter.js`) and anything touching file paths or the network API deserves one.
