@@ -13,6 +13,44 @@
       <a href="#/" class="brand"><span class="logo">🎬</span><span>YT <strong>Altyazı</strong></span></a>
       <button id="drawerBtn" class="btn btn-ghost hidden" aria-expanded="false" data-i18n="nav.videos" data-i18n-title="nav.videosTitle"></button>
     </div>
+    <div id="viewbar" class="viewbar hidden">
+      <div id="capSeg" class="seg cap-seg" role="group" data-i18n-title="cap.title" data-i18n-aria="cap.title">
+        <button data-cap="off" data-i18n="cap.off"></button>
+        <button data-cap="en" data-i18n="cap.en"></button>
+        <button data-cap="tr" data-i18n="cap.tr"></button>
+        <button data-cap="both" data-i18n="cap.both"></button>
+      </div>
+      <div class="seg speed-seg" role="group" data-i18n-aria="video.speed">
+        <button data-rate="0.75">0.75×</button>
+        <button data-rate="1">1×</button>
+        <button data-rate="1.25">1.25×</button>
+        <button data-rate="1.5">1.5×</button>
+      </div>
+      <button id="panelBtn" class="btn btn-sm"></button>
+      <button id="hideVideoBtn" class="btn btn-sm" data-i18n="video.hide" data-i18n-title="video.hideTitle"></button>
+      <div class="menu-wrap">
+        <button id="viewMenuBtn" class="btn btn-sm" aria-expanded="false" data-i18n="menu.view"></button>
+        <div id="viewMenu" class="menu hidden">
+          <label class="switch" data-i18n-title="subs.showTrTitle">
+            <input type="checkbox" id="trToggle" checked />
+            <span class="switch-track"></span>
+            <span data-i18n="subs.showTr"></span>
+          </label>
+          <label class="switch" data-i18n-title="subs.colorsTitle">
+            <input type="checkbox" id="colorToggle" checked />
+            <span class="switch-track"></span>
+            <span data-i18n="subs.colors"></span>
+          </label>
+          <label class="switch" data-i18n-title="tools.autoTitle">
+            <input type="checkbox" id="autoModeToggle" checked />
+            <span class="switch-track"></span>
+            <span data-i18n="tools.auto"></span>
+          </label>
+          <hr />
+          <button id="deleteBtn" class="menu-item danger" data-i18n="video.delete" data-i18n-title="video.deleteTitle"></button>
+        </div>
+      </div>
+    </div>
     <div class="actions">
       <a id="favBtn" href="#/favorites" class="btn btn-ghost" data-i18n-title="nav.favoritesTitle"><span data-i18n="nav.favorites"></span><span id="favBadge" class="nav-badge hidden"></span></a>
       <button id="settingsBtn" class="btn btn-ghost btn-icon" data-i18n-title="nav.settings" data-i18n-aria="nav.settings">⚙</button>
@@ -64,31 +102,8 @@
           <button id="fsBtn" class="fs-btn" data-i18n-title="cap.fullscreen" data-i18n-aria="cap.fullscreen">⛶</button>
         </div>
         <div class="video-meta">
-          <div class="video-meta-row">
-            <h2 id="videoTitle">—</h2>
-            <div class="video-actions">
-              <button id="hideVideoBtn" class="btn btn-sm" data-i18n="video.hide" data-i18n-title="video.hideTitle"></button>
-              <button id="deleteBtn" class="btn btn-danger" data-i18n="video.delete" data-i18n-title="video.deleteTitle"></button>
-            </div>
-          </div>
-          <div class="video-meta-row">
-            <p id="videoStats"></p>
-            <div class="seg speed-seg" role="group" data-i18n-aria="video.speed">
-              <button data-rate="0.75">0.75×</button>
-              <button data-rate="1">1×</button>
-              <button data-rate="1.25">1.25×</button>
-              <button data-rate="1.5">1.5×</button>
-            </div>
-          </div>
-        </div>
-        <div class="video-meta-row video-tools">
-          <div id="capSeg" class="seg cap-seg" role="group" data-i18n-title="cap.title" data-i18n-aria="cap.title">
-            <button data-cap="off" data-i18n="cap.off"></button>
-            <button data-cap="en" data-i18n="cap.en"></button>
-            <button data-cap="tr" data-i18n="cap.tr"></button>
-            <button data-cap="both" data-i18n="cap.both"></button>
-          </div>
-          <button id="panelBtn" class="btn btn-sm"></button>
+          <div class="video-meta-row"><h2 id="videoTitle">—</h2></div>
+          <div class="video-meta-row"><p id="videoStats"></p></div>
         </div>
         <div class="video-hint">
           <span><kbd>Space</kbd> <span data-i18n="hint.space"></span></span>
@@ -96,6 +111,8 @@
           <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="hint.updown"></span></span>
           <span><kbd>V</kbd> <span data-i18n="hint.v"></span></span>
           <span><kbd>C</kbd> <span data-i18n="hint.c"></span></span>
+          <span><kbd>Shift</kbd> <span data-i18n="hint.sel"></span></span>
+          <span><kbd>R</kbd> <span data-i18n="hint.r"></span></span>
           <span><kbd>P</kbd> <span data-i18n="hint.p"></span></span>
           <span data-i18n="hint.yt"></span>
           <span data-i18n="hint.click"></span>
@@ -105,16 +122,6 @@
       <div class="pane subs-pane">
         <div class="subs-head">
           <h2 data-i18n="subs.title"></h2>
-          <label class="switch" data-i18n-title="subs.showTrTitle">
-            <input type="checkbox" id="trToggle" checked />
-            <span class="switch-track"></span>
-            <span data-i18n="subs.showTr"></span>
-          </label>
-          <label class="switch" data-i18n-title="subs.colorsTitle">
-            <input type="checkbox" id="colorToggle" checked />
-            <span class="switch-track"></span>
-            <span data-i18n="subs.colors"></span>
-          </label>
           <span class="head-spacer"></span>
           <span id="subCount" class="badge"></span>
         </div>
@@ -136,12 +143,14 @@
           </div>
         </div>
         <div class="subs-tools">
-          <label class="auto-mode-toggle" data-i18n-title="tools.autoTitle">
-            <input type="checkbox" id="autoModeToggle" checked />
-            <span data-i18n="tools.auto"></span>
-          </label>
           <input id="subSearch" class="input input-sm" type="search" data-i18n-placeholder="tools.search" spellcheck="false" />
           <button id="followBtn" class="btn btn-sm hidden" data-i18n="tools.follow" data-i18n-title="tools.followTitle"></button>
+          <div id="selBar" class="sel-bar hidden">
+            <span id="selInfo"></span>
+            <span class="head-spacer"></span>
+            <button id="selLoop" class="btn btn-sm"></button>
+            <button id="selClear" class="btn btn-sm" data-i18n="sel.clear"></button>
+          </div>
         </div>
         <div id="trBar" class="tr-bar hidden">
           <span id="trBarText"></span>

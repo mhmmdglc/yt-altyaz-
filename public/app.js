@@ -40,6 +40,13 @@ const els = {
   capTr: $('#capTr'),
   capSeg: $('#capSeg'),
   panelBtn: $('#panelBtn'),
+  viewbar: $('#viewbar'),
+  viewMenuBtn: $('#viewMenuBtn'),
+  viewMenu: $('#viewMenu'),
+  selBar: $('#selBar'),
+  selInfo: $('#selInfo'),
+  selLoop: $('#selLoop'),
+  selClear: $('#selClear'),
   fsBtn: $('#fsBtn'),
   mpTitle: $('#mpTitle'),
   mpShowVideo: $('#mpShowVideo'),
@@ -108,7 +115,11 @@ let subsHidden = store('subsHidden') === 'true'; // the subtitle list is hidden:
 let trPollId = 0;
 let isAutoMode = store('autoMode') !== 'false';
 let playUntil = null;
-let loopIndex = -1;
+let loop = null; // { from, to }: the cards being repeated (one card, or a selected range)
+let selLoop = false; // the running loop is the selection's
+let selFrom = -1; // selected cards (a range)
+let selTo = -1;
+let selAnchor = -1; // where a range starts
 let loopTimer = null;
 
 function fmtDate(iso) {
@@ -142,6 +153,8 @@ function showView(name) {
   const views = { empty: els.empty, home: els.home, workspace: els.workspace, favorites: els.favoritesView, review: els.reviewView, study: els.studyView };
   for (const [n, node] of Object.entries(views)) node.classList.toggle('hidden', n !== name);
   els.drawerBtn.classList.toggle('hidden', name !== 'workspace');
+  els.viewbar.classList.toggle('hidden', name !== 'workspace');
+  if (name !== 'workspace') closeViewMenu();
   els.favBtn.classList.toggle('active', name === 'favorites' || name === 'review');
   if (name === 'workspace' && current) document.title = `${titleOf(current)} — YT Altyazı`;
   if (name !== 'workspace') {
@@ -267,6 +280,7 @@ async function openProject(id, at = null) {
 
   current = p;
   activeIndex = -1;
+  selFrom = selTo = selAnchor = -1;
   els.subSearch.value = '';
   els.video.src = `/api/project/${id}/video`;
   els.video.playbackRate = Number(store('rate')) || 1;
@@ -680,7 +694,8 @@ function renderLine(seg, i) {
 
   const favBtn = el('button.card-btn.fav-btn', { text: '☆', title: t('card.fav'), 'aria-label': t('card.fav'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'fav'); } });
   const studyBtn = el('button.card-btn.study-btn', { text: '🎯', title: t('card.study'), 'aria-label': t('card.study'), onclick: (e) => { e.stopPropagation(); pickSentence(line, i, 'study'); } });
-  row.append(time, text, el('div.card-actions', {}, [favBtn, studyBtn, replay]));
+  const selectBtn = el('button.card-btn.select-btn', { text: '☐', title: t('card.select'), 'aria-label': t('card.select'), onclick: (e) => { e.stopPropagation(); pickCard(i); } });
+  row.append(time, text, el('div.card-actions', {}, [favBtn, studyBtn, selectBtn, replay]));
   line.appendChild(row);
 
   const tr = document.createElement('div');
@@ -688,7 +703,11 @@ function renderLine(seg, i) {
   renderTr(tr, seg);
   line.appendChild(tr);
 
-  line.addEventListener('click', () => seekTo(i));
+  line.addEventListener('click', (e) => {
+    if (e.shiftKey) return shiftPick(i);
+    selAnchor = i;
+    seekTo(i);
+  });
   return line;
 }
 
@@ -804,7 +823,7 @@ function seekTo(i) {
   const seg = current.segments[i];
   if (!seg) return;
 
-  if (loopIndex !== -1 && loopIndex !== i) stopLoop();
+  if (loop && (i < loop.from || i > loop.to)) stopLoop();
 
   els.video.currentTime = seg.start;
   activeIndex = i;
@@ -817,23 +836,27 @@ function seekTo(i) {
   if (els.video.paused) els.video.play().catch(() => {});
 }
 
-/* ---------- Shadowing loop ---------- */
+/* ---------- Shadowing loop and card selection ---------- */
 function toggleLoop(i) {
-  if (loopIndex === i) {
-    stopLoop();
-  } else {
-    stopLoop();
-    loopIndex = i;
-    els.video.currentTime = current.segments[i].start;
-    playUntil = null;
-    if (els.video.paused) els.video.play().catch(() => {});
-    updateLoopUI();
-  }
+  if (loop && loop.from === i && loop.to === i) stopLoop();
+  else startLoop(i, i);
+}
+
+// Repeats cards from..to: after the last one the video waits a second and starts again at the first
+function startLoop(from, to, fromSelection = false) {
+  stopLoop();
+  loop = { from, to };
+  selLoop = fromSelection;
+  els.video.currentTime = current.segments[from].start;
+  playUntil = null;
+  if (els.video.paused) els.video.play().catch(() => {});
+  updateLoopUI();
 }
 
 function stopLoop() {
-  if (loopIndex === -1) return;
-  loopIndex = -1;
+  if (!loop) return;
+  loop = null;
+  selLoop = false;
   clearTimeout(loopTimer);
   loopTimer = null;
   updateLoopUI();
@@ -844,11 +867,62 @@ function updateLoopUI() {
   for (let i = 0; i < items.length; i++) {
     const btn = items[i].querySelector('.replay-btn');
     if (!btn) continue;
-    const active = i === loopIndex;
+    const active = !!loop && loop.from === i && loop.to === i;
     btn.textContent = active ? '⏹' : '🔁';
     btn.classList.toggle('active', active);
     btn.title = active ? t('card.stopReplay') : t('card.replay');
   }
+  updateSelectionUI();
+}
+
+// Selecting cards: ☐ on a card (first and last), or Shift+click. The selection can then be repeated as one loop.
+function setSelection(from, to) {
+  const restart = selLoop && loop; // a running selection loop follows the selection
+  selFrom = Math.min(from, to);
+  selTo = Math.max(from, to);
+  if (restart) startLoop(selFrom, selTo, true);
+  else updateSelectionUI();
+}
+
+function clearSelection() {
+  if (selLoop) stopLoop();
+  selFrom = selTo = selAnchor = -1;
+  updateSelectionUI();
+}
+
+function pickCard(i) {
+  if (selFrom < 0) { selAnchor = i; setSelection(i, i); }
+  else if (selFrom === selTo && selFrom === i) clearSelection();
+  else setSelection(selAnchor >= 0 ? selAnchor : selFrom, i);
+}
+
+function shiftPick(i) {
+  if (selAnchor < 0) selAnchor = activeIndex >= 0 ? activeIndex : i;
+  setSelection(selAnchor, i);
+  window.getSelection()?.removeAllRanges(); // Shift+click would also select text
+}
+
+function toggleSelectionLoop() {
+  if (selFrom < 0) return;
+  if (loop && selLoop) stopLoop();
+  else startLoop(selFrom, selTo, true);
+}
+
+function updateSelectionUI() {
+  const items = els.subList.children;
+  for (let i = 0; i < items.length; i++) {
+    const on = selFrom >= 0 && i >= selFrom && i <= selTo;
+    items[i].classList.toggle('selected', on);
+    const btn = items[i].querySelector('.select-btn');
+    if (btn) { btn.textContent = on ? '☑' : '☐'; btn.classList.toggle('on', on); }
+  }
+  els.selBar.classList.toggle('hidden', selFrom < 0);
+  if (selFrom < 0 || !current) return;
+  const dur = current.segments[selTo].end - current.segments[selFrom].start;
+  els.selInfo.textContent = tn('sel.info', selTo - selFrom + 1, { from: selFrom + 1, to: selTo + 1, dur: fmtTime(dur) });
+  const running = !!loop && selLoop;
+  els.selLoop.textContent = running ? t('sel.stop') : t('sel.loop');
+  els.selLoop.classList.toggle('btn-primary', !running);
 }
 
 /* ---------- Translation ---------- */
@@ -1189,8 +1263,11 @@ document.addEventListener('keydown', (e) => {
     closeWordPop();
     closePickers();
     closeDrawer();
+    closeViewMenu();
     if (!els.settings.classList.contains('hidden')) return closeSettings();
-    return closeModal();
+    closeModal();
+    if (selFrom >= 0 && !els.workspace.classList.contains('hidden')) clearSelection();
+    return;
   }
   const overlayOpen = confirmResolve || !els.modal.classList.contains('hidden') || !els.settings.classList.contains('hidden');
   if (overlayOpen) return;
@@ -1206,6 +1283,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.code === 'KeyV') toggleTextMode();
   else if (e.code === 'KeyC') setCapMode(CAP_MODES[(CAP_MODES.indexOf(capMode) + 1) % CAP_MODES.length]);
   else if (e.code === 'KeyP') togglePanel();
+  else if (e.code === 'KeyR') { if (selFrom >= 0) toggleSelectionLoop(); else if (activeIndex >= 0) toggleLoop(activeIndex); }
   // YouTube-style keys
   else if (e.code === 'KeyK') togglePlay();
   else if (e.code === 'KeyJ') seekBy(-10);
@@ -1302,7 +1380,7 @@ els.autoModeToggle.addEventListener('change', (e) => {
   store('autoMode', isAutoMode);
   document.body.classList.toggle('auto-mode-off', !isAutoMode);
   playUntil = null;
-  if (loopIndex !== -1) stopLoop();
+  stopLoop();
 });
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.w, .word-pop')) closeWordPop();
@@ -1326,16 +1404,16 @@ els.video.addEventListener('timeupdate', () => {
   savePos(false);
 
   const now = els.video.currentTime;
-  if (loopIndex !== -1) {
-    const seg = current.segments[loopIndex];
+  if (loop) {
+    const seg = current.segments[loop.to];
     if (now >= seg.end) {
       els.video.pause();
       if (!loopTimer) {
         // Shadowing: wait one second after the card, then play it again until stopped
         loopTimer = setTimeout(() => {
           loopTimer = null;
-          if (loopIndex !== -1) {
-            els.video.currentTime = seg.start;
+          if (loop) {
+            els.video.currentTime = current.segments[loop.from].start;
             els.video.play().catch(() => {});
           }
         }, 1000);
@@ -1380,6 +1458,20 @@ $('#drawerHome').addEventListener('click', closeDrawer);
 els.hideVideoBtn.addEventListener('click', toggleTextMode);
 els.capSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-cap]'); if (b) setCapMode(b.dataset.cap); });
 els.panelBtn.addEventListener('click', togglePanel);
+els.selLoop.addEventListener('click', toggleSelectionLoop);
+els.selClear.addEventListener('click', clearSelection);
+function closeViewMenu() {
+  els.viewMenu.classList.add('hidden');
+  els.viewMenuBtn.setAttribute('aria-expanded', 'false');
+}
+els.viewMenuBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  const open = els.viewMenu.classList.toggle('hidden') === false;
+  els.viewMenuBtn.setAttribute('aria-expanded', String(open));
+});
+document.addEventListener('click', (e) => { if (!e.target.closest('.menu-wrap')) closeViewMenu(); });
+// The top bar can wrap on narrow windows: keep the workspace exactly below it
+new ResizeObserver(() => document.documentElement.style.setProperty('--topbar-h', `${document.querySelector('.topbar').offsetHeight}px`)).observe(document.querySelector('.topbar'));
 // Our own fullscreen button: the browser's would show only the <video> and lose the subtitles
 els.fsBtn.addEventListener('click', toggleFullscreen);
 // Like YouTube: click the picture to pause / play, double-click for fullscreen (the two clicks cancel each other out)

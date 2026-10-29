@@ -105,7 +105,7 @@ body {
   width: 100%;
   gap: 18px;
   padding: 18px;
-  height: calc(100vh - 62px);
+  height: calc(100vh - var(--topbar-h, 62px));
 }
 .pane {
   background: var(--panel);
@@ -999,3 +999,31 @@ body.subs-hidden:not(.text-mode) .video-frame video { max-height: calc(100vh - 2
 /* The picture itself: click = play / pause (the bottom strip stays free for the browser's own controls) */
 .video-click { position: absolute; inset: 0 0 56px 0; z-index: 1; cursor: pointer; }
 .cap-overlay, .fs-btn { z-index: 2; }
+
+/* ---------- View bar in the top bar, view menu, card selection ---------- */
+.topbar { min-height: 62px; height: auto; }
+.viewbar { display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 8px; flex: 1; min-width: 0; }
+.viewbar .seg button { padding: 5px 9px; font-size: 12px; }
+@media (max-width: 1250px) {
+  .topbar { flex-wrap: wrap; padding: 8px 14px; }
+  .viewbar { order: 3; flex-basis: 100%; justify-content: flex-start; }
+}
+.menu-wrap { position: relative; }
+.menu {
+  position: absolute; right: 0; top: calc(100% + 8px); min-width: 250px; z-index: 40;
+  display: flex; flex-direction: column; gap: 4px; padding: 10px;
+  background: var(--panel); border: 1px solid var(--border-strong); border-radius: 12px; box-shadow: var(--shadow);
+}
+.menu .switch { padding: 6px 4px; }
+.menu hr { width: 100%; border: 0; border-top: 1px solid var(--border); margin: 6px 0; }
+.menu-item { text-align: left; border: 0; background: transparent; color: var(--text); font: inherit; padding: 8px 6px; border-radius: 8px; cursor: pointer; }
+.menu-item:hover { background: rgba(255, 255, 255, 0.07); }
+.menu-item.danger { color: #fca5a5; }
+.sel-bar {
+  display: flex; align-items: center; gap: 8px; flex-basis: 100%; padding: 6px 8px; font-size: 13px;
+  background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.35); border-radius: 8px;
+}
+.line.selected {
+  background: rgba(34, 211, 238, 0.09); border-color: rgba(34, 211, 238, 0.4); box-shadow: inset 3px 0 0 var(--accent-2);
+}
+.line.selected .select-btn { opacity: 1; }

@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 - **DeepSeek fallback** for the AI features: when Gemini cannot answer (quota used up, an error), the same request goes straight to DeepSeek, and after a quota error Gemini is skipped for 15 minutes. Key via `DEEPSEEK_API_KEY` or Settings; a DeepSeek key alone also works.
 - A small **Gemini / DeepSeek** chip on Vary and Study answers; Settings shows when Gemini is paused, and each provider has its own **Test** button.
+- **Select cards and loop them**: ☐ on two cards (or Shift+click) selects the range, **🔁 Loop these cards** repeats it (`R`), so a whole passage can be practised for shadowing.
 - **YouTube-style video**: click the picture to pause / play, double-click for fullscreen, `K` `J` `L` `F` `M`, `0`–`9`, `Home` / `End`, `Shift`+`,` / `.` for speed.
 - **Subtitles on the video**: English, translation or both (`C`), following the sentence being spoken, also in fullscreen (our own ⛶ button), and **◧ Hide the list** (`P`) to see only the video.
 - **`npm run package:mac`** builds a self-contained Apple Silicon app and a `.dmg` (macOS 13+; Node.js, yt-dlp, ffmpeg, whisper.cpp, llama.cpp and the models included) for people who should not need a terminal. See [docs/INSTALL.md](docs/INSTALL.md).
@@ -17,6 +18,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Very long comma-chained "sentences" (70–100 words) are now cut at clause boundaries (a comma, preferably with a pause) into pieces of about 16 words, so cards stay readable and translations stay accurate. Sentences up to 32 words are untouched. Rebuild existing videos with `npm run regroup -- all`.
 
 ### Changed
+- The viewing controls moved into the top bar (subtitles on the video, speed, hide list / video) and a **View ▾** menu (translation, colours, auto-continue, delete), so the video and list panes only hold content.
 - **Vary and Study are one page**: 🎯 opens a page with a 🎤 Speak tab and a ✨ Vary tab, so a sentence can be understood, varied and spoken in one place. The separate ✨ button on cards and favorites is gone.
 - On the Study page, clicking a sentence (or *Show*) now reads it aloud; a **🔊 Click reads aloud** checkbox next to the tabs turns it off (remembered).
 - The level (A2–C1) moved from the top bar to that page, next to the tabs; it is still shown in Settings.

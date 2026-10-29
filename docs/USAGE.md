@@ -24,6 +24,14 @@ Each card holds one or a few **whole sentences**; a sentence is never split acro
 
 Click any English word and its meaning in your language appears under it. Without a Gemini key the word is translated on its own by the local model, so for words with several meanings it shows one of them; contractions are expanded first (`don't` → `do not`). If you turn on *Settings → Also use Gemini for word meanings* (needs a Gemini key, off by default), the meaning fits the sentence and you also see the dictionary form, the part of speech and sometimes a short usage note. Click elsewhere or press `Esc` to close it.
 
+## Select cards and repeat them
+
+Press **☐** on a card (it appears when you hover it), then **☐** on another card: every card in between is selected too (or Shift+click). A bar above the list shows the selection; **🔁 Loop these cards** plays them from the first to the last, waits a second and starts again, until you press **⏹**. Changing the selection while it loops moves the loop. **Clear** (or `Esc`) removes the selection. Use this to practise a passage of several cards instead of one.
+
+## Top bar
+
+When a video is open, the top bar holds the viewing controls: subtitles on the video, speed, hide the list, hide the video, and **View ▾** (show translation, sentence colours, auto-continue, delete video).
+
 ## Shadowing (repeat after the speaker)
 
 1. Switch **Auto-continue** off. Now clicking a card plays only that card.
@@ -106,6 +114,8 @@ Press **🙈 Hide** (or `V`) to hide the video. The subtitle panel gets wider an
 | `V` | hide / show the video |
 | `C` | subtitles on the video: none → English → translation → both |
 | `P` | hide / show the subtitle list (video only) |
+| `R` | repeat the selected cards in a loop (or the current card when none is selected) |
+| `Shift`+click | select the cards from the last clicked card to this one |
 | `Esc` | close a popup, the video list or a dialog |
 | `Space`, `1`–`4` | in Review: reveal, then rate |
 | `M`, `Space`, `L`, `1`/`2`, `←`/`→` | in Study (one by one): speak, show, listen, mark, move |

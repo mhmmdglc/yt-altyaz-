@@ -182,6 +182,8 @@ Switch between **List** and **One by one** (keys: `M` speak, `Space` show, `L` l
 | `V` | hide / show the video |
 | `C` | subtitles on the video: none → English → translation → both |
 | `P` | hide / show the subtitle list (video only) |
+| `R` | repeat the selected cards in a loop (or the current card when none is selected) |
+| `Shift`+click | select the cards from the last clicked card to this one |
 | `Esc` | close a popup, the video list or a dialog |
 | `Space`, `1`–`4` | in Review: reveal the translation, then rate *Again / Hard / Good / Easy* |
 | `M`, `Space`, `L`, `1`/`2`, `←`/`→` | in Study (one by one): speak, show, listen, mark, move |

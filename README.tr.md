@@ -182,6 +182,8 @@ Her adımda cümleyi **kendi dilinde** görürsün; İngilizcesi bulanıktır.
 | `V` | videoyu gizle / göster |
 | `C` | videoda altyazı: yok → İngilizce → çeviri → ikisi |
 | `P` | altyazı listesini gizle / göster (yalnız video) |
+| `R` | seçili kartları döngüde tekrarla (seçili yoksa şu anki kartı) |
+| `Shift`+tık | son tıklanan karttan bu karta kadar olan kartları seç |
 | `Esc` | pencereyi / listeyi kapat |
 | `Space`, `1`–`4` | Tekrar ekranında: çeviriyi aç, sonra *Tekrar / Zor / İyi / Kolay* |
 | `M`, `Space`, `L`, `1`/`2`, `←`/`→` | Çalış ekranında (tek tek): söyle, göster, dinle, işaretle, geç |
