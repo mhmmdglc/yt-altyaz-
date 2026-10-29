@@ -26,6 +26,11 @@
         <button data-rate="1.25">1.25×</button>
         <button data-rate="1.5">1.5×</button>
       </div>
+      <label class="switch" data-i18n-title="tools.autoTitle">
+        <input type="checkbox" id="autoModeToggle" checked />
+        <span class="switch-track"></span>
+        <span data-i18n="tools.auto"></span>
+      </label>
       <button id="panelBtn" class="btn btn-sm"></button>
       <button id="hideVideoBtn" class="btn btn-sm" data-i18n="video.hide" data-i18n-title="video.hideTitle"></button>
       <div class="menu-wrap">
@@ -40,11 +45,6 @@
             <input type="checkbox" id="colorToggle" checked />
             <span class="switch-track"></span>
             <span data-i18n="subs.colors"></span>
-          </label>
-          <label class="switch" data-i18n-title="tools.autoTitle">
-            <input type="checkbox" id="autoModeToggle" checked />
-            <span class="switch-track"></span>
-            <span data-i18n="tools.auto"></span>
           </label>
           <hr />
           <button id="deleteBtn" class="menu-item danger" data-i18n="video.delete" data-i18n-title="video.deleteTitle"></button>
@@ -150,6 +150,7 @@
             <span class="head-spacer"></span>
             <button id="selLoop" class="btn btn-sm"></button>
             <button id="selClear" class="btn btn-sm" data-i18n="sel.clear"></button>
+            <div class="sel-now"><div id="selDots" class="sel-dots"></div><span id="selNow"></span></div>
           </div>
         </div>
         <div id="trBar" class="tr-bar hidden">

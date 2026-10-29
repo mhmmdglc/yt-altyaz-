@@ -1020,10 +1020,27 @@ body.subs-hidden:not(.text-mode) .video-frame video { max-height: calc(100vh - 2
 .menu-item:hover { background: rgba(255, 255, 255, 0.07); }
 .menu-item.danger { color: #fca5a5; }
 .sel-bar {
-  display: flex; align-items: center; gap: 8px; flex-basis: 100%; padding: 6px 8px; font-size: 13px;
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; flex-basis: 100%; padding: 6px 8px; font-size: 13px;
   background: rgba(34, 211, 238, 0.1); border: 1px solid rgba(34, 211, 238, 0.35); border-radius: 8px;
 }
 .line.selected {
   background: rgba(34, 211, 238, 0.09); border-color: rgba(34, 211, 238, 0.4); box-shadow: inset 3px 0 0 var(--accent-2);
 }
 .line.selected .select-btn { opacity: 1; }
+
+/* Which selected card is being read: lit dot, "now" counter and a glowing card */
+.sel-now { display: flex; align-items: center; gap: 8px; flex-basis: 100%; }
+.sel-dots { display: flex; flex-wrap: wrap; gap: 5px; }
+.sel-dot { width: 12px; height: 12px; padding: 0; border-radius: 50%; border: 1px solid rgba(34, 211, 238, 0.6); background: transparent; cursor: pointer; transition: transform 0.15s, background 0.15s; }
+.sel-dot:hover { background: rgba(34, 211, 238, 0.35); }
+.sel-dot.on { background: var(--accent-2); transform: scale(1.35); box-shadow: 0 0 8px var(--accent-2); }
+#selNow { font-size: 12px; font-variant-numeric: tabular-nums; color: var(--accent-2); }
+.line.selected.active {
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.22), rgba(99, 102, 241, 0.12));
+  border-color: var(--accent-2);
+  box-shadow: inset 4px 0 0 var(--accent-2), 0 0 0 1px rgba(34, 211, 238, 0.25), 0 4px 18px rgba(34, 211, 238, 0.12);
+}
+.line.selected.active .time::before { content: '▶ '; color: var(--accent-2); animation: now-pulse 1.1s ease-in-out infinite; }
+@keyframes now-pulse { 50% { opacity: 0.3; } }
+@media (prefers-reduced-motion: reduce) { .line.selected.active .time::before { animation: none; } }
+.viewbar > .switch { padding: 0 4px; }

@@ -47,6 +47,8 @@ const els = {
   selInfo: $('#selInfo'),
   selLoop: $('#selLoop'),
   selClear: $('#selClear'),
+  selDots: $('#selDots'),
+  selNow: $('#selNow'),
   fsBtn: $('#fsBtn'),
   mpTitle: $('#mpTitle'),
   mpShowVideo: $('#mpShowVideo'),
@@ -815,6 +817,7 @@ function scrollToActive(force) {
 function highlight(idx) {
   const items = els.subList.children;
   for (let i = 0; i < items.length; i++) items[i].classList.toggle('active', i === idx);
+  updateSelectionNow();
   if (idx >= 0) scrollToActive(false);
 }
 
@@ -908,6 +911,15 @@ function toggleSelectionLoop() {
   else startLoop(selFrom, selTo, true);
 }
 
+// Lights the dot of the card being read, and says which one it is
+function updateSelectionNow() {
+  if (selFrom < 0) return;
+  const k = activeIndex - selFrom;
+  const inside = k >= 0 && activeIndex <= selTo;
+  [...els.selDots.children].forEach((d, j) => d.classList.toggle('on', inside && j === k));
+  els.selNow.textContent = inside ? `▶ ${k + 1} / ${selTo - selFrom + 1}` : '';
+}
+
 function updateSelectionUI() {
   const items = els.subList.children;
   for (let i = 0; i < items.length; i++) {
@@ -918,6 +930,13 @@ function updateSelectionUI() {
   }
   els.selBar.classList.toggle('hidden', selFrom < 0);
   if (selFrom < 0 || !current) return;
+  // One dot per selected card; the one being read lights up (click a dot to jump to that card)
+  const count = selTo - selFrom + 1;
+  if (els.selDots.children.length !== count || els.selDots.dataset.from !== String(selFrom)) {
+    els.selDots.dataset.from = String(selFrom);
+    els.selDots.replaceChildren(...Array.from({ length: Math.min(count, 60) }, (_, k) => el('button.sel-dot', { title: String(selFrom + k + 1), onclick: () => seekTo(selFrom + k) })));
+  }
+  updateSelectionNow();
   const dur = current.segments[selTo].end - current.segments[selFrom].start;
   els.selInfo.textContent = tn('sel.info', selTo - selFrom + 1, { from: selFrom + 1, to: selTo + 1, dur: fmtTime(dur) });
   const running = !!loop && selLoop;

@@ -26,11 +26,11 @@ Click any English word and its meaning in your language appears under it. Withou
 
 ## Select cards and repeat them
 
-Press **☐** on a card (it appears when you hover it), then **☐** on another card: every card in between is selected too (or Shift+click). A bar above the list shows the selection; **🔁 Loop these cards** plays them from the first to the last, waits a second and starts again, until you press **⏹**. Changing the selection while it loops moves the loop. **Clear** (or `Esc`) removes the selection. Use this to practise a passage of several cards instead of one.
+Press **☐** on a card (it appears when you hover it), then **☐** on another card: every card in between is selected too (or Shift+click). A bar above the list shows the selection; **🔁 Loop these cards** plays them from the first to the last, waits a second and starts again, until you press **⏹**. The card being read glows and shows a pulsing ▶; the bar has one dot per selected card with the current one lit and a counter (▶ 3 / 5), and clicking a dot jumps to that card. Changing the selection while it loops moves the loop. **Clear** (or `Esc`) removes the selection. Use this to practise a passage of several cards instead of one.
 
 ## Top bar
 
-When a video is open, the top bar holds the viewing controls: subtitles on the video, speed, hide the list, hide the video, and **View ▾** (show translation, sentence colours, auto-continue, delete video).
+When a video is open, the top bar holds the viewing controls: subtitles on the video, speed, auto-continue, hide the list, hide the video, and **View ▾** (show translation, sentence colours, delete video).
 
 ## Shadowing (repeat after the speaker)
 

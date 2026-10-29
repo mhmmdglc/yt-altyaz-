@@ -18,7 +18,7 @@ All notable changes to this project are documented here. The format follows [Kee
 - Very long comma-chained "sentences" (70–100 words) are now cut at clause boundaries (a comma, preferably with a pause) into pieces of about 16 words, so cards stay readable and translations stay accurate. Sentences up to 32 words are untouched. Rebuild existing videos with `npm run regroup -- all`.
 
 ### Changed
-- The viewing controls moved into the top bar (subtitles on the video, speed, hide list / video) and a **View ▾** menu (translation, colours, auto-continue, delete), so the video and list panes only hold content.
+- The viewing controls moved into the top bar (subtitles on the video, speed, auto-continue, hide list / video) and a **View ▾** menu (translation, colours, delete), so the video and list panes only hold content.
 - **Vary and Study are one page**: 🎯 opens a page with a 🎤 Speak tab and a ✨ Vary tab, so a sentence can be understood, varied and spoken in one place. The separate ✨ button on cards and favorites is gone.
 - On the Study page, clicking a sentence (or *Show*) now reads it aloud; a **🔊 Click reads aloud** checkbox next to the tabs turns it off (remembered).
 - The level (A2–C1) moved from the top bar to that page, next to the tabs; it is still shown in Settings.
