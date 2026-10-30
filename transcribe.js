@@ -5,8 +5,8 @@ import { bin, findWhisperModel } from './config.js';
 import { detectSilences, wordsFromWhisper } from './segmenter.js';
 
 // workBase: temp-file prefix (workBase.wav, workBase.json; removed when done)
-// onStage: reports 'extract' | 'transcribe' | 'segment'
-export async function analyzeAudio(videoPath, workBase, onStage = () => {}) {
+// onStage: reports 'extract' | 'transcribe' | 'segment'; onProgress(fraction 0..1) reports the Whisper progress
+export async function analyzeAudio(videoPath, workBase, onStage = () => {}, onProgress = () => {}) {
   const model = findWhisperModel();
   if (!model) throw new Error('No Whisper model found. Run: npm run setup');
   const wav = `${workBase}.wav`;
@@ -19,7 +19,10 @@ export async function analyzeAudio(videoPath, workBase, onStage = () => {}) {
     // -ml 1 -sow: one word per segment (a timestamp for every word)
     // -mc 0: do not condition on previous text. When enabled, Whisper drifts into lower-case text without punctuation on some
     //        recordings (measured: 12 sentence ends in 2807 words vs 253 with -mc 0), and sentence boundaries come from punctuation.
-    await run(bin.whisper, ['-m', model, '-f', wav, '-oj', '-of', workBase, '-l', 'en', '-ml', '1', '-sow', '-mc', '0', '-np']);
+    // -pp: whisper prints "progress =  45%" while it works
+    await run(bin.whisper, ['-m', model, '-f', wav, '-oj', '-of', workBase, '-l', 'en', '-ml', '1', '-sow', '-mc', '0', '-np', '-pp'], {
+      onLine: (line) => { const m = /progress\s*=\s*(\d+)%/.exec(line); if (m) onProgress(Math.min(1, Number(m[1]) / 100)); }
+    });
     const words = wordsFromWhisper(JSON.parse(await readFile(json, 'utf8')));
 
     onStage('segment');

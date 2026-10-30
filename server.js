@@ -179,6 +179,35 @@ function withLock(id, fn) {
   return next;
 }
 
+// Share of the whole job (0..1) that each step covers, so one bar can show the overall progress
+const STEPS = { queued: [0, 0], title: [0, 0.03], download: [0.03, 0.35], extract: [0.35, 0.4], transcribe: [0.4, 0.95], segment: [0.95, 0.99] };
+
+// "00:12" / "1:02:03" → seconds
+const etaSeconds = (s) => (/^[\d:]+$/.test(s || '') ? s.split(':').reduce((a, x) => a * 60 + Number(x), 0) : null);
+
+function setProgress(job, stage, fraction = 0, extra = {}) {
+  const [a, b] = STEPS[stage] || [0, 0];
+  job.stage = stage;
+  job.progress = a + (b - a) * Math.max(0, Math.min(1, fraction));
+  job.stageProgress = fraction;
+  job.speed = extra.speed || null;
+  job.eta = extra.eta ?? null;
+}
+
+// Parses yt-dlp's "[download]  45.3% of   35.10MiB at    2.50MiB/s ETA 00:10". It downloads the video and the audio one after
+// the other; the video is most of the bytes, so it counts for 85 % of the step.
+function downloadProgress(job) {
+  let stream = 0;
+  return (line) => {
+    if (/^\[download\] Destination:/.test(line)) { stream += 1; return; }
+    const m = /^\[download\]\s+([\d.]+)%(?:.*?\sat\s+([\d.]+\s?\S*\/s))?(?:.*?ETA\s+([\d:]+))?/.exec(line);
+    if (!m) return;
+    const pct = Number(m[1]) / 100;
+    const fraction = stream <= 1 ? 0.85 * pct : 0.85 + 0.15 * pct;
+    setProgress(job, 'download', fraction, { speed: m[2] || null, eta: etaSeconds(m[3]) });
+  };
+}
+
 async function transcribeJob(jobId, url) {
   const job = jobs.get(jobId);
   const dir = projectDir(jobId);
@@ -190,25 +219,32 @@ async function transcribeJob(jobId, url) {
     await mkdir(dir, { recursive: true });
     await mkdir(WORK_DIR, { recursive: true });
 
-    job.stage = 'title';
+    setProgress(job, 'title');
     let title = url;
     try {
       const r = await run(bin.ytdlp, ['--get-title', '--no-playlist', '--', url]);
       title = (r.out || '').trim() || url;
     } catch { /* fall back to the link */ }
+    job.title = title;
 
-    job.stage = 'download';
+    setProgress(job, 'download');
+    const onDownload = { onLine: downloadProgress(job) };
     try {
       // H.264 + AAC first: every browser plays it, and Whisper timed the audio of AV1 + Opus downloads wrongly in tests (a
       // music intro shifted the first sentences by 12 s). Other codecs only when a video has no H.264/AAC version.
-      await run(bin.ytdlp, ['-f', 'bv*[height<=720][vcodec^=avc1]+ba[acodec^=mp4a]/b[height<=720][vcodec^=avc1][acodec^=mp4a]/bv*[height<=720]+ba/b[height<=720]/b', '--merge-output-format', 'mp4', '--no-playlist', '-o', videoPath, '--', url]);
+      await run(bin.ytdlp, ['-f', 'bv*[height<=720][vcodec^=avc1]+ba[acodec^=mp4a]/b[height<=720][vcodec^=avc1][acodec^=mp4a]/bv*[height<=720]+ba/b[height<=720]/b', '--merge-output-format', 'mp4', '--newline', '--progress', '--no-playlist', '-o', videoPath, '--', url], onDownload);
     } catch {
       // On 403 and similar, retry with the Android client at lower quality
-      await run(bin.ytdlp, ['-f', 'b', '--extractor-args', 'youtube:player_client=android', '--merge-output-format', 'mp4', '--force-overwrites', '--no-playlist', '-o', videoPath, '--', url]);
+      await run(bin.ytdlp, ['-f', 'b', '--extractor-args', 'youtube:player_client=android', '--merge-output-format', 'mp4', '--force-overwrites', '--newline', '--progress', '--no-playlist', '-o', videoPath, '--', url], onDownload);
     }
 
     // Word-level transcript + silence map → cards whose sentences are never split (docs/SUBTITLE-CARDS.md)
-    const { words, silences } = await analyzeAudio(videoPath, workBase, (stage) => { job.stage = stage; });
+    const started = Date.now();
+    const { words, silences } = await analyzeAudio(videoPath, workBase, (stage) => setProgress(job, stage), (f) => {
+      // time left: from how long the transcription has taken so far (useful after the first 5 %)
+      const eta = f >= 0.05 ? Math.round(((Date.now() - started) * (1 - f)) / f / 1000) : null;
+      setProgress(job, 'transcribe', f, { eta });
+    });
     await writeFile(path.join(dir, 'words.json'), JSON.stringify({ words, silences }));
     const segments = buildCards(words, silences);
     if (!segments.length) throw new AppError('NO_SPEECH', 'No speech was found in the video.');
@@ -218,6 +254,7 @@ async function transcribeJob(jobId, url) {
 
     job.status = 'done';
     job.stage = 'done';
+    job.progress = 1;
     job.project = project;
 
     // Start translating in the background when a model and a target language are available
@@ -248,7 +285,10 @@ app.post('/api/transcribe', (req, res) => {
 app.get('/api/job/:id', (req, res) => {
   const job = jobs.get(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found', code: 'NOT_FOUND' });
-  res.json({ id: job.id, status: job.status, stage: job.stage, error: job.error, code: job.code, project: job.project });
+  res.json({
+    id: job.id, status: job.status, stage: job.stage, error: job.error, code: job.code, project: job.project,
+    title: job.title, progress: job.progress ?? 0, stageProgress: job.stageProgress ?? 0, speed: job.speed, eta: job.eta
+  });
 });
 
 /* ---------- Translation ---------- */

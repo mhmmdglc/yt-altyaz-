@@ -7,6 +7,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ### Added
 - **DeepSeek fallback** for the AI features: when Gemini cannot answer (quota used up, an error), the same request goes straight to DeepSeek, and after a quota error Gemini is skipped for 15 minutes. Key via `DEEPSEEK_API_KEY` or Settings; a DeepSeek key alone also works.
 - A small **Gemini / DeepSeek** chip on Vary and Study answers; Settings shows when Gemini is paused, and each provider has its own **Test** button.
+- **Real progress when adding a video**: one bar with a percentage for the whole job, four step chips (download, audio, transcribe, sentences), the video title, download speed and the time left (from yt-dlp's and Whisper's own progress output).
 - **Select cards and loop them**: ☐ on two cards (or Shift+click) selects the range, **🔁 Loop these cards** repeats it (`R`), so a whole passage can be practised for shadowing.
 - **YouTube-style video**: click the picture to pause / play, double-click for fullscreen, `K` `J` `L` `F` `M`, `0`–`9`, `Home` / `End`, `Shift`+`,` / `.` for speed.
 - **Subtitles on the video**: English, translation or both (`C`), following the sentence being spoken, also in fullscreen (our own ⛶ button), and **◧ Hide the list** (`P`) to see only the video.

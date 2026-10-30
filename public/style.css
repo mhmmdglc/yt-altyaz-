@@ -655,13 +655,24 @@ body.auto-mode-off .line .replay-btn.active {
 }
 .progress-bar {
   height: 100%;
-  width: 40%;
+  width: 2%;
   border-radius: 999px;
   background: var(--grad);
   background-size: 200% 100%;
-  animation: slide 1.4s linear infinite;
+  transition: width 0.6s ease;
 }
+.progress-bar.indeterminate { width: 40% !important; animation: slide 1.4s linear infinite; }
 .progress p { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+.progress-row { display: flex; align-items: center; gap: 12px; }
+.progress-row .progress-track { flex: 1; }
+.progress-pct { min-width: 3.2em; text-align: right; font-size: 18px; font-variant-numeric: tabular-nums; }
+.progress-title { font-size: 14px; font-weight: 600; margin: 0 0 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.progress-steps { display: flex; gap: 6px; list-style: none; margin: 0 0 12px; padding: 0; flex-wrap: wrap; }
+.progress-steps li { font-size: 12px; padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border-strong); color: var(--muted); }
+.progress-steps li.done { color: #86efac; border-color: rgba(134, 239, 172, 0.4); }
+.progress-steps li.done::after { content: ' ✓'; }
+.progress-steps li.now { color: #fff; border-color: var(--accent); background: rgba(99, 102, 241, 0.25); animation: now-pulse 1.4s ease-in-out infinite; }
+.progress-detail { font-variant-numeric: tabular-nums; color: var(--text) !important; min-height: 1.2em; }
 
 @keyframes slide {
   0% { background-position: 0% 0; }

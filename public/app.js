@@ -82,6 +82,11 @@ const els = {
   urlInput: $('#urlInput'),
   progress: $('#progress'),
   progressText: $('#progressText'),
+  progressBar: $('#progressBar'),
+  progressPct: $('#progressPct'),
+  progressTitle: $('#progressTitle'),
+  progressSteps: $('#progressSteps'),
+  progressDetail: $('#progressDetail'),
   cancelBtn: $('#cancelBtn'),
   goBtn: $('#goBtn'),
   settings: $('#settings'),
@@ -1228,13 +1233,35 @@ function setTranscribing(on) {
   els.newBtn.textContent = on ? t('nav.busy') : t('nav.new');
 }
 
-function setStage(s) { els.progressText.textContent = t(`stage.${s}`); }
+// Shows a job: step chips, one bar for the whole job with its percentage, what is happening and the time left
+const STEP_OF = { queued: -1, title: 0, download: 0, extract: 1, transcribe: 2, segment: 3, done: 4 };
+function showJob(job) {
+  const stage = job.stage || 'queued';
+  const pct = Math.round((job.progress || 0) * 100);
+  const waiting = stage === 'queued' || (stage === 'title' && !pct);
+  els.progressText.textContent = t(`stage.${stage}`);
+  els.progressTitle.textContent = job.title ? `📺 ${job.title}` : '';
+  els.progressBar.classList.toggle('indeterminate', waiting);
+  els.progressBar.style.width = waiting ? '' : `${Math.max(pct, 2)}%`;
+  els.progressPct.textContent = waiting ? '' : `${pct}%`;
+  const cur = STEP_OF[stage] ?? -1;
+  [...els.progressSteps.children].forEach((li, i) => {
+    li.classList.toggle('done', i < cur);
+    li.classList.toggle('now', i === cur);
+  });
+  const parts = [];
+  if (['download', 'transcribe'].includes(stage)) parts.push(`${Math.round((job.stageProgress || 0) * 100)}%`);
+  if (job.speed) parts.push(job.speed);
+  if (job.eta != null && job.eta >= 0) parts.push(t('progress.eta', { time: fmtTime(job.eta) }));
+  els.progressDetail.textContent = parts.join(' · ');
+}
+const setStage = (stage) => showJob({ stage });
 
 async function pollJob(jobId) {
   for (;;) {
     await sleep(1200);
     const job = await fetch(`/api/job/${jobId}`).then((r) => r.json());
-    setStage(job.stage);
+    showJob(job);
     if (job.status === 'done') {
       closeModal();
       els.urlInput.value = '';
@@ -1268,6 +1295,7 @@ async function startTranscribe() {
     await pollJob(jobId);
   } catch (err) {
     els.progressText.textContent = `${t('stage.error')} ${err.message}`;
+    els.progressDetail.textContent = '';
     els.modal.classList.remove('hidden');
     toast(`⚠️ ${err.message}`);
   } finally {

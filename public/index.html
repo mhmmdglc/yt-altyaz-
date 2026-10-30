@@ -170,8 +170,19 @@
       <p class="muted" data-i18n="modal.text"></p>
       <input id="urlInput" class="input" type="url" data-i18n-placeholder="modal.placeholder" spellcheck="false" />
       <div id="progress" class="progress hidden">
-        <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+        <div id="progressTitle" class="progress-title"></div>
+        <ol id="progressSteps" class="progress-steps">
+          <li data-i18n="step.download"></li>
+          <li data-i18n="step.audio"></li>
+          <li data-i18n="step.transcribe"></li>
+          <li data-i18n="step.sentences"></li>
+        </ol>
+        <div class="progress-row">
+          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+          <strong id="progressPct" class="progress-pct">0%</strong>
+        </div>
         <p id="progressText"></p>
+        <p id="progressDetail" class="progress-detail"></p>
         <p class="muted small" data-i18n="modal.hint"></p>
       </div>
       <div class="modal-actions">
