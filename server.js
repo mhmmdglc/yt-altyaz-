@@ -433,7 +433,7 @@ app.post('/api/ai/vary', async (req, res) => {
     const lang = await targetLang();
     const ai = await aiConfig();
     const level = levelOf(await readSettings());
-    const key = aiCache.keyOf(['vary', lang, level, text]);
+    const key = aiCache.keyOf(['vary', 2, lang, level, text]); // 2: pattern named in the learner's language, foreign quotations ignored
     let result = await aiCache.get(key);
     if (!result || req.body?.more) {
       const exclude = (result?.examples || []).map((e) => e.en.replace(/\[\[|\]\]/g, ''));
@@ -449,7 +449,7 @@ app.post('/api/ai/vary', async (req, res) => {
   }
 });
 
-// POST /api/ai/drill { text, context?, fresh? } → { pattern, explanation, steps: [{ label, native, en, alternatives, hint }], level }
+// POST /api/ai/drill { text, context?, fresh? } → { pattern, explanation, notes: [{ title, explanation, example: { en, tr } }], steps: [{ label, native, en, alternatives, hint }], level }
 // A speaking ladder for 🎯 Study. Cached per sentence, language and level; `fresh: true` makes a new set.
 app.post('/api/ai/drill', async (req, res) => {
   const text = String(req.body?.text || '').trim();
@@ -459,7 +459,7 @@ app.post('/api/ai/drill', async (req, res) => {
     const lang = await targetLang();
     const ai = await aiConfig();
     const level = levelOf(await readSettings());
-    const key = aiCache.keyOf(['drill', 2, lang, level, text]); // 2: English-first ladders (older ones are not reused)
+    const key = aiCache.keyOf(['drill', 3, lang, level, text]); // 3: sentence-length steps + grammar notes (2: English-first ladders); older ones are not reused
     let result = req.body?.fresh ? null : await aiCache.get(key);
     if (!result) {
       const r = routerFor(ai);

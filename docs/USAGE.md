@@ -16,8 +16,8 @@ Videos must be spoken in **English** (the Whisper models are English-only).
 
 Each card holds one or a few **whole sentences**; a sentence is never split across two cards (only comma-chained run-ons of more than 32 words are cut at a comma into shorter pieces). Below the English text you see the translation.
 
-- **Show translation** hides/shows all translations (the setting is remembered).
-- **Sentence colours:** when a card contains several sentences, each English sentence and its translation have the same colour (amber, mint, lilac). Switch it off for plain text.
+- **Show translation** (in the list card) hides/shows all translations (the setting is remembered).
+- **Sentence colors:** when a card contains several sentences, each English sentence and its translation have the same colour (amber, mint, lilac). Switch it off for plain text.
 - Click a card to jump to it. The search box finds text in the English subtitles and in the translations.
 
 ## Click a word
@@ -26,11 +26,14 @@ Click any English word and its meaning in your language appears under it. Withou
 
 ## Select cards and repeat them
 
-Press **☐** on a card (it appears when you hover it), then **☐** on another card: every card in between is selected too (or Shift+click). A bar above the list shows the selection; **🔁 Loop these cards** plays them from the first to the last, waits a second and starts again, until you press **⏹**. The card being read glows and shows a pulsing ▶; the bar has one dot per selected card with the current one lit and a counter (▶ 3 / 5), and clicking a dot jumps to that card. Changing the selection while it loops moves the loop. **Clear** (or `Esc`) removes the selection. Use this to practise a passage of several cards instead of one.
+Press **☐** on a card (it appears when you hover it), then **☐** on another card: every card in between is selected too (or Shift+click). A bar above the list shows the selection; **Loop these cards** plays them from the first to the last, waits a second and starts again, until you press **Stop the loop**. The card being read glows and shows a pulsing ▶; the bar has one dot per selected card with the current one lit and a counter (▶ 3 / 5), and clicking a dot jumps to that card. Changing the selection while it loops moves the loop. **Clear selection** (or `Esc`) removes the selection. Use this to practise a passage of several cards instead of one.
 
-## Top bar
+## Where the controls are
 
-When a video is open, the top bar holds the viewing controls: subtitles on the video, speed, auto-continue, hide the list, hide the video, and **View ▾** (show translation, sentence colours, delete video).
+The top bar is only navigation: the brand, **☰ Videos**, **⭐ Favorites**, Settings and **＋ New video**. Every other control sits in the card it belongs to, always visible (no menus):
+
+- **Video card, toolbar above the picture:** *Subtitles on the video* (Off / English / Translation / Both), *Speed*, **Hide video**, and a quiet **Delete video** (asks to confirm). When the list is hidden, **Show list** appears here. Under the picture: the title, the number of cards and a **Keyboard shortcuts** drop-down.
+- **Subtitle list card, above the cards:** **Hide list**, the switches **Show translation**, **Sentence colors** and **Auto-continue** (on: playback goes on down the list after the card you click; off: only that card plays), the search box and, when cards are selected, the selection bar.
 
 ## Shadowing (repeat after the speaker)
 
@@ -57,11 +60,11 @@ Press **🎯** on a card (pick the sentence on a multi-sentence card) or **🎯 
 
 Your **level** (A2–C1) is chosen on this page, next to the tabs: the ladder and the examples are written for it, and changing it rebuilds both. It is remembered, and Settings shows it too.
 
-The page shows the sentence (▶ plays its original audio), its pattern, and a ladder of steps (8 at A2, 12 at B1, 14 at B2, 15 at C1): the simplest core, other subjects, negative, question, added details, the full sentence, and a natural extension. Each step shows the sentence **in your language** and the English **blurred**.
+The page shows the sentence (▶ plays its original audio), its pattern, and, only when the sentence really has something worth knowing, **grammar notes** (0 to 3 cards: a structure, idiom or phrasal verb, a short explanation in your language and an example sentence you can listen to). Below is a ladder that **grows with the sentence**: a short sentence has 8 (A2) to 15 (C1) steps (the simplest core, other subjects, negative, question, the full sentence, an extension); a longer one is simply built up chunk by chunk, each step adding only a few words, up to 20 steps for a very long sentence, and the last step is the full sentence. Each step shows the sentence **in your language** and the English **blurred**.
 
 - **🎤 Say it**: say the English and press **⏹ Done**. Whisper transcribes it locally and compares it word by word (contractions, case and punctuation do not matter): *✓ Great!* (marked as known), *≈ Almost* with the missing words, or *✗ Not quite* (marked as missed). The browser asks for microphone access the first time.
 - **💡 Hint** shows one to three key words; **👁 Show** (or clicking the blur) reveals the English; **🔊** reads it, **🔁** repeats it until stopped.
-- **✓ I knew it / ✗ I didn't** mark a step. The summary at the bottom lets you **practise only the missed steps** again or **add them to Review** (they are then reviewed from your language to English, with 🎤).
+- **✓ I knew it / ✗ I didn't** mark a step (also `1` / `2`) and go on to the next one after a moment: one by one the next step, in the list the next card scrolls into view, and with *Practise the missed* only those steps. Clicking the active mark again to undo it, moving by hand, and the automatic mark from 🎤 Say it do not move on. The summary at the bottom lets you **practise only the missed steps** again or **add them to Review** (they are then reviewed from your language to English, with 🎤).
 - **List / One by one**: one by one is keyboard friendly: `M` speak, `Space` show, `L` listen, `1` knew, `2` didn't, `←`/`→` move.
 - **🔄 New set** writes a different ladder; otherwise the same sentence opens the same (cached) ladder.
 
@@ -88,17 +91,17 @@ See [AI.md](AI.md) for the key, privacy and cost.
 
 ## Subtitles on the video, or only the video
 
-Under the video, **No subtitles / English / Translation / Both** (or `C`) draws the sentence being spoken on the picture, with its translation; for a card with several sentences it follows the sentence that is being said. **◧ Hide the list** (or `P`) hides the subtitle list, so you see only the video, large. The ⛶ button in the corner of the video goes fullscreen *with* the subtitles (the browser's own fullscreen button is removed because it would drop them). Both settings are remembered.
+Under the video, **No subtitles / English / Translation / Both** (or `C`) draws the sentence being spoken on the picture, with its translation; for a card with several sentences it follows the sentence that is being said. **Hide list** (or `P`) in the list card hides the subtitle list, so you see only the video, large; **Show list** in the video toolbar brings it back. The ⛶ button in the corner of the video goes fullscreen *with* the subtitles (the browser's own fullscreen button is removed because it would drop them). Both settings are remembered.
 
 ## Text-only mode
 
-Press **🙈 Hide** (or `V`) to hide the video. The subtitle panel gets wider and a small player bar appears (play/pause, position, speed). The audio keeps playing. **🎬 Show video** or `V` brings the video back.
+Press **Hide video** (or `V`) to hide the video. The subtitle panel gets wider and a small player bar appears (play/pause, position, speed). The audio keeps playing. **Show video** or `V` brings the video back.
 
 ## Other things
 
 - **Resume:** the app remembers where you stopped in every video; a thin bar on the video card on the home grid shows your progress.
 - **Speed:** 0.75×, 1×, 1.25×, 1.5×; remembered.
-- **Delete:** 🗑 on a card on the home grid or in the video view. This deletes the video file and its subtitles from your computer.
+- **Delete:** 🗑 on a card on the home grid, or **Delete video** in the video card's toolbar. This deletes the video file and its subtitles from your computer.
 
 ## Keyboard shortcuts
 

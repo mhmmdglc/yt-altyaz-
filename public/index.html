@@ -13,44 +13,6 @@
       <a href="#/" class="brand"><span class="logo">🎬</span><span>YT <strong>Altyazı</strong></span></a>
       <button id="drawerBtn" class="btn btn-ghost hidden" aria-expanded="false" data-i18n="nav.videos" data-i18n-title="nav.videosTitle"></button>
     </div>
-    <div id="viewbar" class="viewbar hidden">
-      <div id="capSeg" class="seg cap-seg" role="group" data-i18n-title="cap.title" data-i18n-aria="cap.title">
-        <button data-cap="off" data-i18n="cap.off"></button>
-        <button data-cap="en" data-i18n="cap.en"></button>
-        <button data-cap="tr" data-i18n="cap.tr"></button>
-        <button data-cap="both" data-i18n="cap.both"></button>
-      </div>
-      <div class="seg speed-seg" role="group" data-i18n-aria="video.speed">
-        <button data-rate="0.75">0.75×</button>
-        <button data-rate="1">1×</button>
-        <button data-rate="1.25">1.25×</button>
-        <button data-rate="1.5">1.5×</button>
-      </div>
-      <label class="switch" data-i18n-title="tools.autoTitle">
-        <input type="checkbox" id="autoModeToggle" checked />
-        <span class="switch-track"></span>
-        <span data-i18n="tools.auto"></span>
-      </label>
-      <button id="panelBtn" class="btn btn-sm"></button>
-      <button id="hideVideoBtn" class="btn btn-sm" data-i18n="video.hide" data-i18n-title="video.hideTitle"></button>
-      <div class="menu-wrap">
-        <button id="viewMenuBtn" class="btn btn-sm" aria-expanded="false" data-i18n="menu.view"></button>
-        <div id="viewMenu" class="menu hidden">
-          <label class="switch" data-i18n-title="subs.showTrTitle">
-            <input type="checkbox" id="trToggle" checked />
-            <span class="switch-track"></span>
-            <span data-i18n="subs.showTr"></span>
-          </label>
-          <label class="switch" data-i18n-title="subs.colorsTitle">
-            <input type="checkbox" id="colorToggle" checked />
-            <span class="switch-track"></span>
-            <span data-i18n="subs.colors"></span>
-          </label>
-          <hr />
-          <button id="deleteBtn" class="menu-item danger" data-i18n="video.delete" data-i18n-title="video.deleteTitle"></button>
-        </div>
-      </div>
-    </div>
     <div class="actions">
       <a id="favBtn" href="#/favorites" class="btn btn-ghost" data-i18n-title="nav.favoritesTitle"><span data-i18n="nav.favorites"></span><span id="favBadge" class="nav-badge hidden"></span></a>
       <button id="settingsBtn" class="btn btn-ghost btn-icon" data-i18n-title="nav.settings" data-i18n-aria="nav.settings">⚙</button>
@@ -95,6 +57,31 @@
       </aside>
 
       <div class="pane video-pane">
+        <div class="toolbar video-toolbar" role="toolbar" data-i18n-aria="video.toolbar">
+          <div class="tb-group">
+            <span id="capLabel" class="tb-label" data-i18n="cap.label"></span>
+            <div id="capSeg" class="seg" role="group" aria-labelledby="capLabel" data-i18n-title="cap.title">
+              <button data-cap="off" data-i18n="cap.off"></button>
+              <button data-cap="en" data-i18n="cap.en"></button>
+              <button data-cap="tr" data-i18n="cap.tr"></button>
+              <button data-cap="both" data-i18n="cap.both"></button>
+            </div>
+          </div>
+          <div class="tb-group">
+            <span id="speedLabel" class="tb-label" data-i18n="video.speedLabel"></span>
+            <div class="seg speed-seg" role="group" aria-labelledby="speedLabel">
+              <button data-rate="0.75">0.75×</button>
+              <button data-rate="1">1×</button>
+              <button data-rate="1.25">1.25×</button>
+              <button data-rate="1.5">1.5×</button>
+            </div>
+          </div>
+          <div class="tb-group tb-actions">
+            <button id="panelShowBtn" class="btn btn-sm panel-show-btn" data-i18n-title="cap.panelShowTitle"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></svg><span data-i18n="cap.panelShow"></span></button>
+            <button id="hideVideoBtn" class="btn btn-sm" data-i18n-title="video.hideTitle"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A9.8 9.8 0 0 1 12 6c5 0 8.5 4 9.5 6a14 14 0 0 1-2.6 3.4"/><path d="M6.5 7.7C4.4 9.2 3 11.3 2.5 12c1 2 4.5 6 9.5 6 1.5 0 2.8-.4 4-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg><span data-i18n="video.hide"></span></button>
+            <button id="deleteBtn" class="btn btn-sm btn-quiet btn-quiet-danger" data-i18n-title="video.deleteTitle"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg><span data-i18n="video.delete"></span></button>
+          </div>
+        </div>
         <div id="videoFrame" class="video-frame">
           <video id="video" controls controlsList="nofullscreen" playsinline preload="metadata"></video>
           <div id="videoClick" class="video-click"></div>
@@ -102,39 +89,49 @@
           <button id="fsBtn" class="fs-btn" data-i18n-title="cap.fullscreen" data-i18n-aria="cap.fullscreen">⛶</button>
         </div>
         <div class="video-meta">
-          <div class="video-meta-row"><h2 id="videoTitle">—</h2></div>
-          <div class="video-meta-row"><p id="videoStats"></p></div>
+          <h2 id="videoTitle">—</h2>
+          <p id="videoStats"></p>
         </div>
-        <div class="video-hint">
-          <span><kbd>Space</kbd> <span data-i18n="hint.space"></span></span>
-          <span><kbd>←</kbd><kbd>→</kbd> <span data-i18n="hint.arrows"></span></span>
-          <span><kbd>↑</kbd><kbd>↓</kbd> <span data-i18n="hint.updown"></span></span>
-          <span><kbd>V</kbd> <span data-i18n="hint.v"></span></span>
-          <span><kbd>C</kbd> <span data-i18n="hint.c"></span></span>
-          <span><kbd>Shift</kbd> <span data-i18n="hint.sel"></span></span>
-          <span><kbd>R</kbd> <span data-i18n="hint.r"></span></span>
-          <span><kbd>P</kbd> <span data-i18n="hint.p"></span></span>
-          <span data-i18n="hint.yt"></span>
-          <span data-i18n="hint.click"></span>
-        </div>
+        <details class="kbd-help">
+          <summary><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="3"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg><span data-i18n="hint.title"></span><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="kbd-grid">
+            <div><span class="keys"><kbd>Space</kbd><kbd>K</kbd></span><span data-i18n="hint.space"></span></div>
+            <div><span class="keys"><kbd>←</kbd><kbd>→</kbd></span><span data-i18n="hint.arrows"></span></div>
+            <div><span class="keys"><kbd>J</kbd><kbd>L</kbd></span><span data-i18n="hint.jl"></span></div>
+            <div><span class="keys"><kbd>↑</kbd><kbd>↓</kbd></span><span data-i18n="hint.updown"></span></div>
+            <div><span class="keys"><kbd>C</kbd></span><span data-i18n="hint.c"></span></div>
+            <div><span class="keys"><kbd>V</kbd></span><span data-i18n="hint.v"></span></div>
+            <div><span class="keys"><kbd>P</kbd></span><span data-i18n="hint.p"></span></div>
+            <div><span class="keys"><kbd>Shift</kbd></span><span data-i18n="hint.sel"></span></div>
+            <div><span class="keys"><kbd>R</kbd></span><span data-i18n="hint.r"></span></div>
+            <div><span class="keys"><kbd>F</kbd></span><span data-i18n="hint.f"></span></div>
+            <div><span class="keys"><kbd>M</kbd></span><span data-i18n="hint.m"></span></div>
+            <div><span class="keys"><kbd>0–9</kbd></span><span data-i18n="hint.digits"></span></div>
+            <div><span class="keys"><kbd>Shift</kbd><kbd>,</kbd><kbd>.</kbd></span><span data-i18n="hint.speedkeys"></span></div>
+            <div><span class="keys"><kbd>,</kbd><kbd>.</kbd></span><span data-i18n="hint.frames"></span></div>
+            <div><span class="keys"><kbd>Home</kbd><kbd>End</kbd></span><span data-i18n="hint.startend"></span></div>
+          </div>
+          <p class="kbd-note"><span data-i18n="hint.pic"></span> · <span data-i18n="hint.click"></span></p>
+        </details>
       </div>
 
       <div class="pane subs-pane">
         <div class="subs-head">
           <h2 data-i18n="subs.title"></h2>
-          <span class="head-spacer"></span>
           <span id="subCount" class="badge"></span>
+          <span class="head-spacer"></span>
+          <button id="panelBtn" class="btn btn-sm" data-i18n-title="cap.panelTitle"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M15 4v16"/></svg><span data-i18n="cap.panelHide"></span></button>
         </div>
         <div id="miniPlayer" class="mini-player">
           <div class="mp-row">
             <strong id="mpTitle" class="mp-title"></strong>
-            <button id="mpShowVideo" class="btn btn-sm" data-i18n="mini.showVideo" data-i18n-title="mini.showVideoTitle"></button>
+            <button id="mpShowVideo" class="btn btn-sm" data-i18n-title="mini.showVideoTitle"><svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="M16 10l5-3v10l-5-3z"/></svg><span data-i18n="mini.showVideo"></span></button>
           </div>
           <div class="mp-row">
-            <button id="mpPlay" class="btn btn-sm mp-play" data-i18n-aria="mini.play">▶</button>
+            <button id="mpPlay" class="btn btn-sm mp-play" data-i18n-aria="mini.play" data-i18n-title="mini.play">▶</button>
             <input id="mpSeek" class="mp-seek" type="range" min="0" max="1000" value="0" data-i18n-aria="mini.seek" />
             <span id="mpTime" class="mp-time">0:00 / 0:00</span>
-            <div class="seg speed-seg" role="group" data-i18n-aria="video.speed">
+            <div class="seg speed-seg" role="group" data-i18n-aria="video.speed" data-i18n-title="video.speed">
               <button data-rate="0.75">0.75×</button>
               <button data-rate="1">1×</button>
               <button data-rate="1.25">1.25×</button>
@@ -142,14 +139,35 @@
             </div>
           </div>
         </div>
+        <div class="subs-options" role="group" data-i18n-aria="subs.options">
+          <label class="switch" data-i18n-title="subs.showTrTitle">
+            <input type="checkbox" id="trToggle" checked />
+            <span class="switch-track"></span>
+            <span data-i18n="subs.showTr"></span>
+          </label>
+          <label class="switch" data-i18n-title="subs.colorsTitle">
+            <input type="checkbox" id="colorToggle" checked />
+            <span class="switch-track"></span>
+            <span data-i18n="subs.colors"></span>
+          </label>
+          <label class="switch" data-i18n-title="tools.autoTitle">
+            <input type="checkbox" id="autoModeToggle" checked />
+            <span class="switch-track"></span>
+            <span data-i18n="tools.auto"></span>
+          </label>
+          <p class="opt-hint"><span class="auto-on" data-i18n="tools.autoOn"></span><span class="auto-off" data-i18n="tools.autoOff"></span></p>
+        </div>
         <div class="subs-tools">
-          <input id="subSearch" class="input input-sm" type="search" data-i18n-placeholder="tools.search" spellcheck="false" />
+          <label class="search-field">
+            <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+            <input id="subSearch" class="input input-sm" type="search" data-i18n-placeholder="tools.search" data-i18n-aria="tools.search" spellcheck="false" />
+          </label>
           <button id="followBtn" class="btn btn-sm hidden" data-i18n="tools.follow" data-i18n-title="tools.followTitle"></button>
           <div id="selBar" class="sel-bar hidden">
             <span id="selInfo"></span>
             <span class="head-spacer"></span>
             <button id="selLoop" class="btn btn-sm"></button>
-            <button id="selClear" class="btn btn-sm" data-i18n="sel.clear"></button>
+            <button id="selClear" class="btn btn-sm" data-i18n="sel.clear" data-i18n-title="sel.clearTitle"></button>
             <div class="sel-now"><div id="selDots" class="sel-dots"></div><span id="selNow"></span></div>
           </div>
         </div>
@@ -178,15 +196,15 @@
           <li data-i18n="step.sentences"></li>
         </ol>
         <div class="progress-row">
-          <div class="progress-track"><div id="progressBar" class="progress-bar"></div></div>
+          <div class="progress-track" role="progressbar" aria-valuemin="0" aria-valuemax="100" data-i18n-aria="step.progress"><div id="progressBar" class="progress-bar"></div></div>
           <strong id="progressPct" class="progress-pct">0%</strong>
         </div>
-        <p id="progressText"></p>
+        <p id="progressText" aria-live="polite"></p>
         <p id="progressDetail" class="progress-detail"></p>
         <p class="muted small" data-i18n="modal.hint"></p>
       </div>
       <div class="modal-actions">
-        <button id="cancelBtn" class="btn" data-i18n="common.close"></button>
+        <button id="cancelBtn" class="btn" data-i18n="modal.cancel"></button>
         <button id="goBtn" class="btn btn-primary" data-i18n="modal.go"></button>
       </div>
     </div>

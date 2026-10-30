@@ -40,9 +40,7 @@ const els = {
   capTr: $('#capTr'),
   capSeg: $('#capSeg'),
   panelBtn: $('#panelBtn'),
-  viewbar: $('#viewbar'),
-  viewMenuBtn: $('#viewMenuBtn'),
-  viewMenu: $('#viewMenu'),
+  panelShowBtn: $('#panelShowBtn'),
   selBar: $('#selBar'),
   selInfo: $('#selInfo'),
   selLoop: $('#selLoop'),
@@ -160,8 +158,6 @@ function showView(name) {
   const views = { empty: els.empty, home: els.home, workspace: els.workspace, favorites: els.favoritesView, review: els.reviewView, study: els.studyView };
   for (const [n, node] of Object.entries(views)) node.classList.toggle('hidden', n !== name);
   els.drawerBtn.classList.toggle('hidden', name !== 'workspace');
-  els.viewbar.classList.toggle('hidden', name !== 'workspace');
-  if (name !== 'workspace') closeViewMenu();
   els.favBtn.classList.toggle('active', name === 'favorites' || name === 'review');
   if (name === 'workspace' && current) document.title = `${titleOf(current)} — YT Altyazı`;
   if (name !== 'workspace') {
@@ -744,6 +740,7 @@ function updateActive() {
       if (now >= current.segments[i].start) { idx = i; break; }
     }
   }
+  if (loop && idx >= 0) idx = Math.min(loop.to, Math.max(loop.from, idx)); // a loop never flashes another card
   if (idx !== activeIndex) {
     activeIndex = idx;
     highlight(idx);
@@ -794,8 +791,9 @@ function setCapMode(mode) {
 
 function applyPanel() {
   document.body.classList.toggle('subs-hidden', subsHidden);
-  els.panelBtn.textContent = subsHidden ? t('cap.panelShow') : t('cap.panelHide');
-  els.panelBtn.title = t('cap.panelTitle');
+  // Two buttons, one in each card: "Hide list" lives in the list card, "Show list" in the video card (the list card is gone then)
+  els.panelBtn.setAttribute('aria-pressed', String(subsHidden));
+  els.panelShowBtn.setAttribute('aria-pressed', String(subsHidden));
   if (!subsHidden && els.subList.children.length) scrollToActive(true);
 }
 
@@ -842,6 +840,7 @@ function seekTo(i) {
   playUntil = isAutoMode ? null : seg.end;
 
   if (els.video.paused) els.video.play().catch(() => {});
+  watchBoundary();
 }
 
 /* ---------- Shadowing loop and card selection ---------- */
@@ -858,6 +857,7 @@ function startLoop(from, to, fromSelection = false) {
   els.video.currentTime = current.segments[from].start;
   playUntil = null;
   if (els.video.paused) els.video.play().catch(() => {});
+  watchBoundary();
   updateLoopUI();
 }
 
@@ -867,7 +867,45 @@ function stopLoop() {
   selLoop = false;
   clearTimeout(loopTimer);
   loopTimer = null;
+  // Auto-continue off means "play only this card": after a loop the limit of the card being played comes back
+  playUntil = !isAutoMode && activeIndex >= 0 && current ? current.segments[activeIndex].end : null;
   updateLoopUI();
+}
+
+/* The end of what may play now: the last card of a loop, or the card being played when auto-continue is off.
+   It is checked on every frame (timeupdate comes only ~4 times a second, so the video would run into the next card). */
+function boundaryEnd() { return loop && current ? current.segments[loop.to].end : playUntil; }
+
+let lastBoundaryTime = 0;
+function checkBoundary() {
+  const now = els.video.currentTime;
+  const jumped = Math.abs(now - lastBoundaryTime) > 0.6; // a seek (bar, key, click), not normal playback
+  lastBoundaryTime = now;
+  const end = boundaryEnd();
+  if (end === null || els.video.paused || now < end - 0.02) return;
+  if (jumped && !loop) { playUntil = null; return; } // the user took control: do not snap back to the end of the card
+  els.video.pause();
+  els.video.currentTime = Math.max(0, end - 0.02); // stay inside the card
+  if (!loop) { playUntil = null; return; }
+  if (!loopTimer) {
+    // Shadowing: wait one second after the last card, then play again from the first until stopped
+    loopTimer = setTimeout(() => {
+      loopTimer = null;
+      if (!loop) return;
+      els.video.currentTime = current.segments[loop.from].start;
+      els.video.play().catch(() => {});
+    }, 1000);
+  }
+}
+
+let boundaryFrame = 0;
+function watchBoundary() {
+  cancelAnimationFrame(boundaryFrame);
+  const step = () => {
+    checkBoundary();
+    if (!els.video.paused && boundaryEnd() !== null) boundaryFrame = requestAnimationFrame(step);
+  };
+  boundaryFrame = requestAnimationFrame(step);
 }
 
 function updateLoopUI() {
@@ -1244,6 +1282,7 @@ function showJob(job) {
   els.progressBar.classList.toggle('indeterminate', waiting);
   els.progressBar.style.width = waiting ? '' : `${Math.max(pct, 2)}%`;
   els.progressPct.textContent = waiting ? '' : `${pct}%`;
+  els.progressBar.parentElement.setAttribute('aria-valuenow', waiting ? '' : String(pct));
   const cur = STEP_OF[stage] ?? -1;
   [...els.progressSteps.children].forEach((li, i) => {
     li.classList.toggle('done', i < cur);
@@ -1304,13 +1343,16 @@ async function startTranscribe() {
 }
 
 /* ---------- Keyboard ---------- */
+// Space on a focused button (after clicking e.g. a speed button) must only play / pause the video, not press the button again
+document.addEventListener('keyup', (e) => {
+  if (e.code === 'Space' && e.target.closest?.('button, summary') && !els.workspace.classList.contains('hidden')) e.preventDefault();
+});
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (confirmResolve) return closeConfirm(false);
     closeWordPop();
     closePickers();
     closeDrawer();
-    closeViewMenu();
     if (!els.settings.classList.contains('hidden')) return closeSettings();
     closeModal();
     if (selFrom >= 0 && !els.workspace.classList.contains('hidden')) clearSelection();
@@ -1318,8 +1360,11 @@ document.addEventListener('keydown', (e) => {
   }
   const overlayOpen = confirmResolve || !els.modal.classList.contains('hidden') || !els.settings.classList.contains('hidden');
   if (overlayOpen) return;
-  const tag = document.activeElement && document.activeElement.tagName;
-  if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
+  const focused = document.activeElement;
+  const tag = focused && focused.tagName;
+  // Typing fields keep their keys; a focused switch (checkbox) only keeps Space, so it can still be toggled from the keyboard
+  const typing = tag === 'TEXTAREA' || tag === 'SELECT' || (tag === 'INPUT' && !['checkbox', 'radio', 'button'].includes(focused.type));
+  if (typing || (tag === 'INPUT' && focused.type === 'checkbox' && e.code === 'Space')) return;
   if (els.workspace.classList.contains('hidden') || e.metaKey || e.ctrlKey || e.altKey) return;
 
   if (e.code === 'Space') { e.preventDefault(); togglePlay(); }
@@ -1329,7 +1374,7 @@ document.addEventListener('keydown', (e) => {
   else if (e.code === 'ArrowDown') { e.preventDefault(); seekTo(activeIndex + 1); }
   else if (e.code === 'KeyV') toggleTextMode();
   else if (e.code === 'KeyC') setCapMode(CAP_MODES[(CAP_MODES.indexOf(capMode) + 1) % CAP_MODES.length]);
-  else if (e.code === 'KeyP') togglePanel();
+  else if (e.code === 'KeyP') { if (!document.body.classList.contains('text-mode')) togglePanel(); }
   else if (e.code === 'KeyR') { if (selFrom >= 0) toggleSelectionLoop(); else if (activeIndex >= 0) toggleLoop(activeIndex); }
   // YouTube-style keys
   else if (e.code === 'KeyK') togglePlay();
@@ -1368,12 +1413,15 @@ function toggleFullscreen() {
 }
 
 /* ---------- Video list drawer ---------- */
+els.sidebar.inert = true;
 function openDrawer() {
+  els.sidebar.inert = false;
   els.sidebar.classList.add('open');
   els.drawerBackdrop.classList.remove('hidden');
   els.drawerBtn.setAttribute('aria-expanded', 'true');
 }
 function closeDrawer() {
+  els.sidebar.inert = true; // off-screen: keep it out of the Tab order
   els.sidebar.classList.remove('open');
   els.drawerBackdrop.classList.add('hidden');
   els.drawerBtn.setAttribute('aria-expanded', 'false');
@@ -1401,8 +1449,28 @@ function updateMiniPlayer() {
   if (!seekDragging && v.duration) els.mpSeek.value = String(Math.round((v.currentTime / v.duration) * 1000));
 }
 
+/* ---------- Segmented controls: a pill slides under the selected button ---------- */
+function initSegs() {
+  document.querySelectorAll('.seg').forEach((seg) => {
+    const pill = el('span.seg-pill', { 'aria-hidden': 'true' });
+    seg.prepend(pill);
+    const place = () => {
+      const b = seg.querySelector('button.active');
+      if (!b || !b.offsetWidth) { pill.style.opacity = '0'; return; }
+      pill.style.opacity = '1';
+      pill.style.width = `${b.offsetWidth}px`;
+      pill.style.transform = `translateX(${b.offsetLeft}px)`;
+    };
+    new MutationObserver(place).observe(seg, { attributes: true, attributeFilter: ['class'], subtree: true });
+    new ResizeObserver(place).observe(seg);
+    place();
+    requestAnimationFrame(() => requestAnimationFrame(() => seg.classList.add('ready'))); // no slide-in on first paint
+  });
+}
+
 /* ---------- Wire up ---------- */
 applyI18n();
+initSegs();
 document.body.classList.toggle('auto-mode-off', !isAutoMode);
 els.autoModeToggle.checked = isAutoMode;
 applyShowTr();
@@ -1426,8 +1494,9 @@ els.autoModeToggle.addEventListener('change', (e) => {
   isAutoMode = e.target.checked;
   store('autoMode', isAutoMode);
   document.body.classList.toggle('auto-mode-off', !isAutoMode);
-  playUntil = null;
   stopLoop();
+  playUntil = !isAutoMode && activeIndex >= 0 && current ? current.segments[activeIndex].end : null; // off: play only this card
+  watchBoundary();
 });
 document.addEventListener('click', (e) => {
   if (!e.target.closest('.w, .word-pop')) closeWordPop();
@@ -1450,27 +1519,9 @@ els.video.addEventListener('timeupdate', () => {
   updateActive();
   savePos(false);
 
-  const now = els.video.currentTime;
-  if (loop) {
-    const seg = current.segments[loop.to];
-    if (now >= seg.end) {
-      els.video.pause();
-      if (!loopTimer) {
-        // Shadowing: wait one second after the card, then play it again until stopped
-        loopTimer = setTimeout(() => {
-          loopTimer = null;
-          if (loop) {
-            els.video.currentTime = current.segments[loop.from].start;
-            els.video.play().catch(() => {});
-          }
-        }, 1000);
-      }
-    }
-  } else if (playUntil !== null && now >= playUntil) {
-    els.video.pause();
-    playUntil = null;
-  }
+  checkBoundary(); // (also runs every frame while playing, see watchBoundary)
 });
+els.video.addEventListener('playing', watchBoundary);
 els.video.addEventListener('pause', () => savePos(true));
 els.video.addEventListener('ratechange', () => { store('rate', els.video.playbackRate); renderSpeed(); });
 els.video.addEventListener('loadedmetadata', () => {
@@ -1505,20 +1556,9 @@ $('#drawerHome').addEventListener('click', closeDrawer);
 els.hideVideoBtn.addEventListener('click', toggleTextMode);
 els.capSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-cap]'); if (b) setCapMode(b.dataset.cap); });
 els.panelBtn.addEventListener('click', togglePanel);
+els.panelShowBtn.addEventListener('click', togglePanel);
 els.selLoop.addEventListener('click', toggleSelectionLoop);
 els.selClear.addEventListener('click', clearSelection);
-function closeViewMenu() {
-  els.viewMenu.classList.add('hidden');
-  els.viewMenuBtn.setAttribute('aria-expanded', 'false');
-}
-els.viewMenuBtn.addEventListener('click', (e) => {
-  e.stopPropagation();
-  const open = els.viewMenu.classList.toggle('hidden') === false;
-  els.viewMenuBtn.setAttribute('aria-expanded', String(open));
-});
-document.addEventListener('click', (e) => { if (!e.target.closest('.menu-wrap')) closeViewMenu(); });
-// The top bar can wrap on narrow windows: keep the workspace exactly below it
-new ResizeObserver(() => document.documentElement.style.setProperty('--topbar-h', `${document.querySelector('.topbar').offsetHeight}px`)).observe(document.querySelector('.topbar'));
 // Our own fullscreen button: the browser's would show only the <video> and lose the subtitles
 els.fsBtn.addEventListener('click', toggleFullscreen);
 // Like YouTube: click the picture to pause / play, double-click for fullscreen (the two clicks cancel each other out)

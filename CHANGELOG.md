@@ -5,6 +5,10 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [1.3.0] - 2026-10-22
 
 ### Added
+- **Study ladders that fit the sentence**: the number of steps follows the length of the sentence and the level (up to 20 for a very long one) and a long sentence is built up chunk by chunk, each step adding only a few words, with the full sentence as the last step (before: 12 steps, then a jump from a short fragment to the whole sentence).
+- Study: **✓ I knew it / ✗ I didn't** (buttons or `1` / `2`) move on to the next step by themselves (one by one: next step; list: the next card scrolls into view); un-marking, a manual move, or a mark from the 🎤 check does not.
+- **Study and Vary follow your language and ignore foreign quotations**: the pattern name, labels, translations and notes are always in your translation language (the pattern used to come back in English), and a quotation in another language (for example a transliterated Arabic verse inside an English sentence) is no longer put into the ladder steps; steps that end on words like *and be* or *your* are dropped.
+- **Grammar notes on the Study page**: 0 to 3 short cards at the top (a structure, idiom or phrasal verb in the sentence, an explanation in your language and an example you can listen to), only when the sentence has something worth knowing.
 - **DeepSeek fallback** for the AI features: when Gemini cannot answer (quota used up, an error), the same request goes straight to DeepSeek, and after a quota error Gemini is skipped for 15 minutes. Key via `DEEPSEEK_API_KEY` or Settings; a DeepSeek key alone also works.
 - A small **Gemini / DeepSeek** chip on Vary and Study answers; Settings shows when Gemini is paused, and each provider has its own **Test** button.
 - **Real progress when adding a video**: one bar with a percentage for the whole job, four step chips (download, audio, transcribe, sentences), the video title, download speed and the time left (from yt-dlp's and Whisper's own progress output).
@@ -15,11 +19,13 @@ All notable changes to this project are documented here. The format follows [Kee
 - **Desktop shortcut**: `npm run setup` asks at the end whether to put a *YT Altyazı* shortcut on the Desktop; `npm run shortcut` does it any time (macOS app, Windows `.lnk`, Linux `.desktop`). A cross-platform `scripts/launch.mjs` starts the server and opens the browser. The Windows and Linux shortcuts are untested on real machines.
 
 ### Fixed
+- The step counter (n / m) appeared twice on a Study step in one-by-one mode; it is shown once now.
 - **Subtitles shifted by a music intro** (first sentences 12 s early): videos are now downloaded as H.264 + AAC when available. Without a JavaScript runtime yt-dlp chose AV1 + Opus, and Whisper then timed the first 30 s window wrongly on a TED talk with a music and applause intro. H.264/AAC also plays in every browser (AV1 does not play in Safari on M1/M2). Videos downloaded before this change can be added again.
 - Very long comma-chained "sentences" (70–100 words) are now cut at clause boundaries (a comma, preferably with a pause) into pieces of about 16 words, so cards stay readable and translations stay accurate. Sentences up to 32 words are untouched. Rebuild existing videos with `npm run regroup -- all`.
 
 ### Changed
-- The viewing controls moved into the top bar (subtitles on the video, speed, auto-continue, hide list / video) and a **View ▾** menu (translation, colours, delete), so the video and list panes only hold content.
+- The video workspace controls now live in the card they belong to, with no menus: the video card has its own toolbar (*Subtitles on the video*, *Speed*, **Hide video**, **Delete video**, and **Show list** while the list is hidden) and the subtitle list card holds **Hide list**, **Show translation**, **Sentence colors**, **Auto-continue**, search and the selection bar. The top bar is navigation only again.
+- Clearer labels: *Hide* → **Hide video** / **Hide list**, *Delete* → **Delete video**, *Clear* → **Clear selection**, *Close* → **Close window**, *Translate* → **Translate this video**, *Retry* → **Retry translation**. Keyboard shortcuts moved into a **Keyboard shortcuts** drop-down under the video. Segmented controls have a sliding selection.
 - **Vary and Study are one page**: 🎯 opens a page with a 🎤 Speak tab and a ✨ Vary tab, so a sentence can be understood, varied and spoken in one place. The separate ✨ button on cards and favorites is gone.
 - On the Study page, clicking a sentence (or *Show*) now reads it aloud; a **🔊 Click reads aloud** checkbox next to the tabs turns it off (remembered).
 - The level (A2–C1) moved from the top bar to that page, next to the tabs; it is still shown in Settings.

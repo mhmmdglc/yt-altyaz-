@@ -124,7 +124,7 @@ Turn **Auto-continue** off, then press 🔁 on a card. The sentence plays, the a
 
 ### 4. Work with text only
 
-Press `V` (or **🙈 Hide**) to hide the video. The panel gets wider and a small player bar appears; the audio keeps playing.
+Press `V` (or **Hide video**) to hide the video. The panel gets wider and a small player bar appears; the audio keeps playing.
 
 ### 5. Choose your languages
 
@@ -155,7 +155,7 @@ Choose your level (A2, B1, B2, C1) on the same page, next to the tabs. Vary need
 
 ### 8. Study a sentence by speaking (optional, Gemini)
 
-Press 🎯 on a card (or on a favorite). A study page opens with a **speaking ladder** built from that sentence: the simplest core first, then other subjects, negative, question, added details, and finally the full sentence and a little beyond.
+Press 🎯 on a card (or on a favorite). A study page opens with a **speaking ladder** built from that sentence: the simplest core first, then other subjects, negative, question, added details, and finally the full sentence and a little beyond. A long sentence is built up piece by piece instead (up to 20 steps, each adding only a few words), and if it has a structure or idiom worth knowing, short **grammar notes** with an example appear at the top.
 
 For each step you see the sentence **in your language**; the English is blurred.
 

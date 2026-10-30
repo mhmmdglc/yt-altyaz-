@@ -169,10 +169,33 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
         el('span.vary-label', { text: t('vary.title') }), el('strong', { text: data.pattern }),
         data.provider ? el('span.provider-chip', { text: providerName(data.provider), title: t('ai.madeBy', { provider: providerName(data.provider) }) }) : null
       ]),
-      el('p.vary-explain', { text: data.explanation })
+      el('p.vary-explain', { text: data.explanation }),
+      notesCard(data.notes)
     );
     drawTools();
     draw();
+  }
+
+  // Grammar / idiom notes about the sentence (0 to 3, from the drill answer): a calm card above the ladder
+  function notesCard(notes) {
+    if (!Array.isArray(notes) || !notes.length) return null;
+    return el('section.study-notes', { 'aria-label': t('study.notes') }, [
+      el('h3.study-notes-title', { text: `📝 ${t('study.notes')}` }),
+      ...notes.map((n, k) => {
+        const key = `note:${k}`;
+        return el('div.study-note', {}, [
+          el('strong.note-title', { text: n.title }),
+          el('p.note-text', { text: n.explanation }),
+          n.example ? el('div.note-example', {}, [
+            el('button.icon-btn', { text: '🔊', title: t('study.listen'), 'aria-label': t('study.listen'), onclick: () => {
+              if (playingKey() === key) return stopClip();
+              speak(stripMarks(n.example.en), { key });
+            } }),
+            el('div', {}, [el('div.note-en', {}, highlightPattern(n.example.en)), el('div.note-tr', { text: n.example.tr })])
+          ]) : null
+        ]);
+      })
+    ]);
   }
 
   function drawTools() {
@@ -215,9 +238,9 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
         else if (r.verdict === 'wrong') grade(i, 'missed');
       }
     });
-    const gradeBtn = (g, label) => el(`button.btn.btn-sm.grade-btn${st.grade === g ? '.on' : ''}`, { text: label, onclick: () => grade(i, st.grade === g ? null : g) });
+    const gradeBtn = (g, label) => el(`button.btn.btn-sm.grade-btn${st.grade === g ? '.on' : ''}`, { text: label, onclick: () => grade(i, st.grade === g ? null : g, { advance: st.grade !== g }) });
     setChildren(box,
-      el('div.step-head', {}, [el('span.chip', { text: step.label }), el('span.muted.small', { text: `${i + 1} / ${data.steps.length}` })]),
+      el('div.step-head', {}, [el('span.chip', { text: step.label }), mode === 'single' ? null : el('span.muted.small', { text: `${i + 1} / ${data.steps.length}` })]),
       el('div.step-native', { text: step.native }),
       en,
       st.hint && !st.revealed ? el('div.step-hint', { text: `💡 ${step.hint}` }) : null,
@@ -260,7 +283,32 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
     });
   }
 
-  function grade(i, g) {
+  // After "I knew it" / "I didn't" (buttons and keys 1 / 2) the page goes on to the next visible step after a short pause, so the
+  // press stays visible. One by one: same as →. List: the next card scrolls into view. Any manual move cancels it.
+  let advanceTimer = null;
+  const cancelAdvance = () => { clearTimeout(advanceTimer); advanceTimer = null; };
+  function advanceFrom(i) {
+    cancelAdvance();
+    advanceTimer = setTimeout(() => {
+      advanceTimer = null;
+      const steps = visibleSteps();
+      const pos = steps.indexOf(i);
+      if (pos < 0 || pos >= steps.length - 1) return; // the last step: the summary is already below
+      if (mode === 'single') {
+        if (steps[index] === i) move(1);
+        return;
+      }
+      const next = body.querySelector(`.step[data-i="${steps[pos + 1]}"]`);
+      if (!next) return;
+      const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      next.scrollIntoView({ behavior: calm ? 'auto' : 'smooth', block: 'center' });
+      next.classList.remove('step-pulse');
+      void next.offsetWidth; // restart the animation
+      next.classList.add('step-pulse');
+    }, 300);
+  }
+
+  function grade(i, g, { advance = false } = {}) {
     state[i].grade = g;
     const box = body.querySelector(`.step[data-i="${i}"]`);
     if (box) {
@@ -269,9 +317,11 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
       box.querySelectorAll('.grade-btn').forEach((b) => b.classList.toggle('on', b.textContent === (g === 'known' ? t('study.known') : g === 'missed' ? t('study.missed') : '')));
     }
     drawSummary();
+    if (advance && g) advanceFrom(i);
   }
 
   function draw() {
+    cancelAdvance();
     stopClip();
     const steps = visibleSteps();
     if (mode === 'list') {
@@ -331,8 +381,8 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
     if (i === undefined) return;
     if (e.code === 'KeyM') { e.preventDefault(); state[i].say?.toggle(); }
     else if (e.code === 'Space') { e.preventDefault(); reveal(i); }
-    else if (e.key === '1') grade(i, 'known');
-    else if (e.key === '2') grade(i, 'missed');
+    else if (e.key === '1') grade(i, 'known', { advance: true });
+    else if (e.key === '2') grade(i, 'missed', { advance: true });
     else if (e.code === 'ArrowRight') move(1);
     else if (e.code === 'ArrowLeft') move(-1);
     else if (e.code === 'KeyL') { reveal(i); speak(stripMarks(data.steps[i].en), { key: `step:${i}` }); }
@@ -343,6 +393,7 @@ export function renderStudy(root, { source, back, hasProject, levels, getLevel, 
   load();
   return async () => {
     document.removeEventListener('keydown', onKey);
+    cancelAdvance();
     if (isRecording()) await stopRecording();
     stopClip();
   };
