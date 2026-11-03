@@ -115,12 +115,14 @@ test('drill: the number of steps follows the sentence length and the level', asy
   // short sentences keep the per-level counts
   assert.deepEqual(['A2', 'B1', 'B2', 'C1'].map((l) => of(4, l)), [8, 12, 14, 15]);
   assert.equal(of(8, 'B1'), 12);
-  // longer ones are built up piece by piece: about half a step per word, more for lower levels
-  assert.equal(of(12, 'B1'), 7);
-  assert.equal(of(26, 'B1'), 14);
-  assert.equal(of(26, 'A2'), 16);
-  assert.equal(of(26, 'C1'), 12);
-  assert.equal(of(40, 'B1'), 20);
+  // longer ones are built up about one word or tiny chunk per step: more steps for lower levels
+  assert.equal(of(9, 'B1'), 7);
+  assert.equal(of(11, 'B1'), 9);
+  assert.equal(of(11, 'A2'), 10);
+  assert.equal(of(11, 'C1'), 7);
+  assert.equal(of(16, 'B1'), 13);
+  assert.equal(of(26, 'C1'), 16);
+  assert.equal(of(26, 'B1'), 20);
   // never above 20 or below 6, monotone in the length from 9 words on, unknown level = B1
   for (const l of ['A2', 'B1', 'B2', 'C1']) {
     let prev = 0;
@@ -134,17 +136,30 @@ test('drill: the number of steps follows the sentence length and the level', asy
   assert.equal(of(0, 'B1'), 12);
 });
 
+test('drill: the English part is cut into small pieces, a function word and a word before "of" go with the next word', async () => {
+  const { drillPieces } = await import('../gemini.js');
+  assert.deepEqual(drillPieces('One of the things many of you probably know about Musa Alayhissalam'), ['One of the things', 'many of you', 'probably', 'know', 'about Musa', 'Alayhissalam']);
+  assert.deepEqual(drillPieces('I went to the market, and then home.'), ['I', 'went', 'to the market,', 'and then', 'home.']);
+  assert.deepEqual(drillPieces('Look at the'), ['Look at the'], 'a trailing function word stays with the last piece');
+  assert.deepEqual(drillPieces(''), []);
+});
+
 test('drill: the prompt asks for the exact count, gradual build-up and grammar notes', async () => {
   const { drillPrompt } = await import('../gemini.js');
-  const long = drillPrompt({ sentence: Array(26).fill('word').join(' '), lang: 'tr', level: 'B1' });
-  assert.match(long, /exactly 14 steps/);
+  const long = drillPrompt({ sentence: Array(16).fill('word').join(' '), lang: 'tr', level: 'B1' });
+  assert.match(long, /ladder of 13 steps \(12 to 14;/);
+  assert.match(long, /exactly ONE piece/);
+  assert.match(long, /start from the CORE/);
+  assert.match(long, /"word" · "word"/, 'the pieces are listed');
+  assert.match(long, /MINIMAL CHANGE/);
+  assert.match(long, /never a word or idea that only comes in a later step/);
   assert.match(long, /"chunks"/);
   assert.match(long, /GRADUAL/);
   assert.match(long, /"notes": 0 to 3 things/);
   assert.match(long, /return \[\]/);
   const short = drillPrompt({ sentence: 'I have a limit.', lang: 'tr', level: 'B1' });
   assert.match(short, /ladder of 12 steps/);
-  assert.doesNotMatch(short, /exactly \d+ steps/);
+  assert.doesNotMatch(short, /\(\d+ to \d+;/);
 });
 
 test('drill: grammar notes are trimmed, incomplete ones dropped, at most 3', async () => {
@@ -197,10 +212,10 @@ test('drill: the final step is the English part word for word; the step count fo
   const english = 'Be grateful to me and be grateful to both of your parents.';
   const step = (en, native = 'çeviri') => ({ label: 'l', en, native, alternatives: [], hint: '' });
 
-  // N counts the English part (12 words → 7 at B1), not the Arabic
+  // N counts the English part (12 words → 10 at B1), not the Arabic
   assert.equal(englishPart(source), english);
-  assert.equal(drillStepCount(source, 'B1'), 7);
-  assert.equal(drillStepCount(english, 'B1'), 7);
+  assert.equal(drillStepCount(source, 'B1'), 10);
+  assert.equal(drillStepCount(english, 'B1'), 10);
   assert.equal(englishPart('He said "I am fine" and left the room.'), 'He said "I am fine" and left the room.', 'an English quotation stays');
   assert.equal(englishPart('"Bismillah ir rahman"'), '"Bismillah ir rahman"', 'nothing but a quotation: kept whole');
   assert.equal(englishPart('Say “La ilaha illa Allah” every day, my friend.'), 'Say every day, my friend.');

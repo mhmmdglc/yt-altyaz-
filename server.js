@@ -460,7 +460,7 @@ app.post('/api/ai/drill', async (req, res) => {
     const lang = await targetLang();
     const ai = await aiConfig();
     const level = levelOf(await readSettings());
-    const key = aiCache.keyOf(['drill', 3, lang, level, text]); // 3: sentence-length steps + grammar notes (2: English-first ladders); older ones are not reused
+    const key = aiCache.keyOf(['drill', 4, lang, level, text]); // 4: one chunk per step + practice steps (3: sentence-length steps + grammar notes); older ones are not reused
     let result = req.body?.fresh ? null : await aiCache.get(key);
     if (!result) {
       const r = routerFor(ai);

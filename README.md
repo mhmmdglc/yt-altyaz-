@@ -155,7 +155,7 @@ Choose your level (A2, B1, B2, C1) on the same page, next to the tabs. Vary need
 
 ### 8. Study a sentence by speaking (optional, Gemini)
 
-Press 🎯 on a card (or on a favorite). A study page opens with a **speaking ladder** built from that sentence: the simplest core first, then other subjects, negative, question, added details, and finally the full sentence and a little beyond. A long sentence is built up piece by piece instead (up to 20 steps, each adding only a few words), and if it has a structure or idiom worth knowing, short **grammar notes** with an example appear at the top.
+Press 🎯 on a card (or on a favorite). A study page opens with a **speaking ladder** built from that sentence: the simplest core first, then other subjects, negative, question, added details, and finally the full sentence and a little beyond. A long sentence is built up piece by piece instead (up to 20 steps, each adding one word or a tiny group, a hard part practised on its own first), and if it has a structure or idiom worth knowing, short **grammar notes** with an example appear at the top.
 
 For each step you see the sentence **in your language**; the English is blurred.
 

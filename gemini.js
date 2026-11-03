@@ -130,16 +130,16 @@ export async function wordInContext({ apiKey, model, generate, word, sentence, l
 
 // How many steps the ladder has: it depends on the level AND on the length of the sentence.
 //  - up to 8 words: DRILL_BASE[level] steps (variations of the core, then the sentence, then an extension)
-//  - longer: the ladder only builds the sentence up, chunk by chunk, so the steps follow the length:
+//  - longer: the ladder only builds the sentence up, one small chunk per step, so the steps follow the length:
 //    round(words × DRILL_PACE[level]), between 6 and 20 (a lower level takes smaller steps)
-//    B1: 12 words 6 · 20 w 10 · 27 w 14 · 40+ w 20.   A2: 12 w 7 · 27 w 15 · 37+ w 20.   C1: 12 w 6 · 27 w 11 · 48+ w 20
-//  (about 2 words per step, so the pieces are real phrases and not single words; steps of a long source follow its clauses)
+//    B1: 9 words 7 · 11 w 9 · 16 w 13 · 25+ w 20.   A2: 11 w 10 · 22+ w 20.   C1: 11 w 7 · 16 w 10 · 33+ w 20
+//  (about one word or one tiny chunk like "many of you" per step; a part that cannot simply be added is practised alone first)
 // Shared by the Vary and Study prompts: the explanation language and foreign quotations
 const languageRule = (language, what) => `LANGUAGE: ${what} are written in ${language}, never in English (do not write the pattern name in English: not "Imperative with Be and Adjective" but its ${language} name, with the English term in parentheses only if it helps). Only the English example sentences are English.`;
 const FOREIGN_RULE = 'FOREIGN QUOTATIONS: if the sentence contains a quotation or recitation in another language (transliterated Arabic, Latin words, a verse, a list of names, quoted text that is clearly not English), ignore that part completely and work only with the English part of the sentence.';
 
 export const DRILL_BASE = { A2: 8, B1: 12, B2: 14, C1: 15 };
-export const DRILL_PACE = { A2: 0.6, B1: 0.55, B2: 0.5, C1: 0.45 };
+export const DRILL_PACE = { A2: 0.9, B1: 0.8, B2: 0.7, C1: 0.6 };
 export const DRILL_SHORT = 8; // words
 export const DRILL_MIN = 6;
 export const DRILL_MAX = 20;
@@ -157,6 +157,21 @@ export function englishPart(sentence) {
     .replace(/\s+/g, ' ')
     .trim();
   return wordCount(rest) >= 3 ? rest : text;
+}
+// The English part cut into its smallest sayable pieces: single words, a function word kept with the word after it ("of the things", "about Musa")
+const GLUE = new Set('a an the to of for with as at in on about and or but that than by from into if so because not no your my our their his her its this these those very'.split(' '));
+export function drillPieces(english) {
+  const pieces = [];
+  let open = [];
+  const words = clean(english).split(/\s+/).filter(Boolean);
+  const bare = (w) => (w || '').toLowerCase().replace(/[^\p{L}']/gu, '');
+  words.forEach((w, i) => {
+    open.push(w);
+    // a word before "of" stays with it too: "One of the things", "many of you"
+    if ((!GLUE.has(bare(w)) && bare(words[i + 1]) !== 'of') || /[,;:.!?]$/.test(w)) { pieces.push(open.join(' ')); open = []; }
+  });
+  if (open.length) pieces.length ? (pieces[pieces.length - 1] += ` ${open.join(' ')}`) : pieces.push(open.join(' '));
+  return pieces;
 }
 export function drillStepCount(sentence, level = 'B1') {
   const words = wordCount(englishPart(sentence));
@@ -191,7 +206,7 @@ export const DRILL_SCHEMA = {
         required: ['title', 'explanation', 'example']
       }
     },
-    // planning aid, not shown: a long source cut into its consecutive pieces (empty for short sources)
+    // planning aid, not shown: the new piece of each step of a long source, in ladder order (empty for short sources)
     chunks: { type: 'ARRAY', items: { type: 'STRING' } },
     steps: {
       type: 'ARRAY',
@@ -227,13 +242,21 @@ export function drillPrompt({ sentence, context = '', lang, level = 'B1' }) {
     languageRule(language, 'Every field except the English sentences ("english", "en", "alternatives", "hint", the note example "en"): "pattern", "explanation", every "label" and "native", every note "title", "explanation" and "tr"'),
     '',
     words > DRILL_SHORT
-      ? `Make a ladder of exactly ${steps} steps that builds this long source up to the full sentence in small increments. First fill "chunks": the source cut in order into exactly ${steps} consecutive pieces (that is ${(words / steps).toFixed(1)} words per piece on average: no piece is longer than 3 words (split longer phrases and clauses into 2 or 3 pieces), and a piece never ends on a function word (as, with, to, that, for, of, the, a, and): keep it with what follows). The first chunk is the shortest complete core that makes sense alone (a full clause or real phrase, even if it takes 4 to 6 words); later chunks end at a natural boundary, and a function word (as, with, to, that, the, and) always stays with the phrase it introduces. Step k is the first k chunks joined, so there are exactly ${steps} steps.`
+      ? [
+        `Make a ladder of ${steps} steps (${steps - 1} to ${steps + 1}; never repeat a step to reach the number) that builds this long source up to the full sentence one small piece at a time, like a patient teacher.`,
+        `The small pieces of the English part are (a function word already goes with the word after it): ${drillPieces(englishPart(sentence)).map((p) => `"${p}"`).join(' · ')}. Two neighbours may form one piece where one alone cannot be said or translated.`,
+        `First plan the ladder in "chunks": one entry per step, the piece that step adds (step 1: its whole phrase), so "chunks" has as many entries as "steps" and every piece is used once.`,
+        `ORDER: every step must be a phrase or clause that can be said and translated into ${language} on its own (a fragment like "One of the things many of you" cannot: it needs "know"). So start from the CORE: the subject + verb of the main idea (e.g. "many of you know"), or simply the first pieces when the sentence starts with them. Every next step adds exactly ONE piece, before or after what is already there, and is marked [[new]]. A beginning that needs a whole clause after it ("One of the things", "The book that") is practised alone first if it is new, then joins the whole practised clause in the very next step (never rebuild a practised part piece by piece).`,
+        'Example (English only) for "The book that my teacher gave me last week is really interesting": "my teacher" → "my teacher gave me" → "my teacher gave me last week" → "the book" → "The book that my teacher gave me last week" → "The book that my teacher gave me last week is interesting" → "The book that my teacher gave me last week is really interesting".',
+        'The full sentence is the LAST step and comes only once: nothing after it.'
+      ].join('\n')
       : `Make a ladder of ${steps} steps that teaches the pattern of this short source: step 1 is the core, the shortest form that makes sense alone (subject + verb, e.g. "I'm going." / the ${language} equivalent; never a bare pronoun or verb) → other subjects (2 or 3 steps) → negative → question → add the place, object or a detail → combine → the source sentence itself → 1 or 2 natural extensions. "chunks" is [].`,
     'Rules:',
-    '- GRADUAL: every step adds or changes only a little compared with the previous one. Never jump from a short piece to a long sentence: if the gap would be bigger, put another step in between. The last steps get closer and closer to the full sentence.',
+    '- GRADUAL: every step adds or changes only ONE small thing compared with the previous one (one word, or 2 or 3 words that belong together); only a step that joins a practised part back to the sentence may add more. Never jump from a short piece to a long sentence: if the gap would be bigger, put another step in between. The last steps get closer and closer to the full sentence.',
     '- The source sentence itself appears exactly once, with its exact words and nothing added: as the last step (short sources: followed by at most 2 extensions). No two steps may be the same or add nothing.',
     `- Every step is a meaningful phrase that has a sensible ${language} translation on its own: if a piece cannot be translated sensibly (like a trailing "and be"), choose another chunk boundary, e.g. "Be grateful to me" → "Be grateful to me and to your parents". Never nonsense, never a repeated word.`,
-    `- Write the English sentence of each step first; its ${language} sentence must then be a faithful, natural translation of exactly that English sentence (nothing added, nothing left out). An unfinished piece is translated as the natural ${language} phrase for exactly the words so far, never with "…" or "..." and never a different phrase.`,
+    `- Write the English sentence of each step first; its ${language} sentence must then translate EXACTLY that English sentence, naturally (nothing added, nothing left out; one translation, no parentheses or alternatives): never a word or idea that only comes in a later step (no verb, object or adverb borrowed from later to make a piece sound complete). A complete English clause is translated as a complete ${language} sentence; an unfinished piece as the natural ${language} phrase for exactly the words so far, never with "…" or "..." and never a different phrase; if that is impossible, the cut is wrong: practise the new part on its own first.`,
+    `- MINIMAL CHANGE: each ${language} sentence keeps the words and order of the previous step's ${language} sentence as far as the grammar allows and only adds the translation of the new words (other words change only when ${language} grammar forces it, e.g. a suffix), so the learner sees exactly what was added.`,
     '- The English of every step must be correct, natural English a person could say (a real clause or phrase that ends at a natural boundary, never on a preposition, article, conjunction or "to"; never a random cut). Double-check subject–verb agreement, negatives and questions.',
     `- Write ${language} with its proper alphabet and diacritics (for Turkish: ç, ğ, ı, İ, ö, ş, ü), natural word order and correct spelling.`,
     '- Keep the meaning of the source sentence (e.g. if "going to" means movement to a place, do not turn it into the "going to" future).',
@@ -242,7 +265,7 @@ export function drillPrompt({ sentence, context = '', lang, level = 'B1' }) {
     `- "pattern": the name of the pattern in ${language}, with the English template in parentheses if it helps, e.g. for Turkish "Emir kipi + be + sıfat (Be + adjective)".`,
     `- "explanation": 1 or 2 short sentences in ${language} about the pattern.`,
     `- "notes": 0 to 3 things in the SOURCE sentence that are above ${level} or not literal, so a ${level} learner probably does not know them: a grammar structure, idiom, phrasal verb, collocation, or a word-order / tense point (e.g. "regard X as Y", "wish + past perfect", "get used to + -ing", a reduced relative clause). Most everyday sentences need NO note: not basic grammar a ${level} learner knows (have, be good at, simple tenses), not single words or nouns, not trivia, no filler. Prefer the 1 or 2 most useful; if nothing is really worth knowing, return []. Each note: "title" (3 to 6 words, the structure itself), "explanation" (1 or 2 short sentences in ${language}: what it means and how it works), "example" with "en" (a new, short, correct English sentence that uses the same structure as the source; wrap the structure in [[double brackets]]) and "tr" (its faithful ${language} translation).`,
-    `- "steps": each with "label" (1 or 2 correctly spelled words in ${language} naming what this step adds, e.g. the subject, negative, place, reason), "en" (the most natural English, wrapping in [[double brackets]] the words that are new or changed compared to the previous step), "native" (the faithful ${language} translation of that English sentence, which the learner sees), "alternatives" (other correct English ways to say it, e.g. without contractions, no brackets; may be empty) and "hint" (1 to 3 English key words, not the whole answer).`
+    `- "steps": each with "label" (1 or 2 correctly spelled words in ${language} naming what this step adds, e.g. the subject, negative, place, reason), "en" (the most natural English, wrapping in [[double brackets]] the words that are new or changed compared to the previous step; in a practice step that starts a new part, that whole part), "native" (the faithful ${language} translation of that English sentence, which the learner sees), "alternatives" (other correct English ways to say it, e.g. without contractions, no brackets; may be empty) and "hint" (1 to 3 English key words, not the whole answer).`
   ].filter((l) => l !== '').join('\n');
 }
 
@@ -344,6 +367,7 @@ export async function drill({ apiKey, model, generate, sentence, context, lang, 
   const out = await gen({ apiKey, model, generate })({ prompt: drillPrompt({ sentence, context, lang, level }), schema: DRILL_SCHEMA, temperature: 0.6 });
   const english = pickEnglish(sentence, out.english);
   const foreign = foreignTokens(sentence, english);
+  const long = wordCount(english) > DRILL_SHORT;
   let steps = (Array.isArray(out.steps) ? out.steps : [])
     .map((s) => ({
       label: clean(s.label, 40),
@@ -356,10 +380,11 @@ export async function drill({ apiKey, model, generate, sentence, context, lang, 
     // steps that contain a word of the foreign quotation of the source are not practised
     .filter((s) => !foreign.size || !tokens(s.en).some((w) => foreign.has(w)))
     // a translation with "…" placeholders is no use for a speaking drill (kept only if that would leave too few steps)
-    .filter((s, i, all) => i === all.length - 1 || !/…|\.\.\./.test(s.native) || all.filter((x) => !/…|\.\.\./.test(x.native)).length < 3);
+    .filter((s, i, all) => i === all.length - 1 || !/…|\.\.\./.test(s.native) || all.filter((x) => !/…|\.\.\./.test(x.native)).length < 3)
+    // a single word ("know", "things") is no step of a long sentence's ladder
+    .filter((s, i, all) => !long || i === all.length - 1 || wordCount(stripBrackets(s.en)) > 1);
   steps = dedupeSteps(steps);
   if (steps.length < 3) throw new AIError('AI_FAILED', 'The AI returned too few steps.');
-  const long = wordCount(english) > DRILL_SHORT;
   if (long) steps = enforceFinal(steps, english);
   return { pattern: clean(out.pattern, 200), explanation: clean(out.explanation, 600), notes: cleanNotes(out.notes), steps: capSteps(dropDanglingSteps(steps, long ? DRILL_MIN : 3)) };
 }

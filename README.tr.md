@@ -155,7 +155,7 @@ Seviyeni (A2, B1, B2, C1) aynı sayfada, sekmelerin yanından seç. Çeşitle ü
 
 ### 8. Bir cümleyi konuşarak çalış (opsiyonel, Gemini)
 
-Bir kartta 🎯'e bas (ya da bir favoride 🎯). O cümleden kurulmuş bir **konuşma merdiveniyle** çalışma ekranı açılır: önce en basit çekirdek, sonra diğer kişiler, olumsuz, soru, eklenen ayrıntılar ve en sonda tam cümle ve biraz ötesi. Uzun bir cümle bunun yerine parça parça kurulur (en çok 20 adım, her adım yalnız birkaç kelime ekler); cümlede bilmeye değer bir yapı ya da deyim varsa en üstte örnekli kısa **dilbilgisi notları** çıkar.
+Bir kartta 🎯'e bas (ya da bir favoride 🎯). O cümleden kurulmuş bir **konuşma merdiveniyle** çalışma ekranı açılır: önce en basit çekirdek, sonra diğer kişiler, olumsuz, soru, eklenen ayrıntılar ve en sonda tam cümle ve biraz ötesi. Uzun bir cümle bunun yerine parça parça kurulur (en çok 20 adım, her adım bir kelime ya da küçük bir öbek ekler, zor bir parça önce tek başına çalışılır); cümlede bilmeye değer bir yapı ya da deyim varsa en üstte örnekli kısa **dilbilgisi notları** çıkar.
 
 Her adımda cümleyi **kendi dilinde** görürsün; İngilizcesi bulanıktır.
 
