@@ -295,7 +295,26 @@ const en = {
   'fav.drill': 'Speaking · {pattern}',
   'review.say': 'Say it in English, then show the answer.',
   'err.BAD_AUDIO': 'No audio was received.',
-  'err.SPEECH_FAILED': 'Your recording could not be processed.'
+  'err.SPEECH_FAILED': 'Your recording could not be processed.',
+  'split.label': 'Split',
+  'split.button': 'Split into short parts with AI',
+  'split.buttonTitle': 'Sends this video\'s whole transcript to the AI, which cuts it into short, meaningful parts for your level and translates them. The result is saved; the original cards stay.',
+  'split.viewTitle': 'Which subtitle cards to show: the original ones or the AI\'s short parts',
+  'split.original': 'Original',
+  'split.ai': 'AI split',
+  'split.again': 'Split again',
+  'split.againTitle': 'Ask the AI to split this video again (replaces the current AI split)',
+  'split.againStale': 'Split again (transcript changed)',
+  'split.staleTitle': 'The transcript of this video changed after it was split. Split again to update the AI parts.',
+  'split.running': 'Splitting… {done} / {total}',
+  'split.starting': 'Splitting…',
+  'split.done': 'Done: {n} short parts. "Original" switches back at any time.',
+  'split.confirmTitle': 'Split again?',
+  'split.confirmAgain': 'The AI splits this video again and the current AI split is replaced. The original cards stay as they are.',
+  'err.AI_SPLIT_RUNNING': 'This video is already being split.',
+  'err.NO_WORDS': 'This video has no word timings. Run: npm run regroup -- <id> --whisper',
+  'err.NO_AI_SPLIT': 'This video has not been split by the AI yet.',
+  'err.BAD_MODE': 'Unknown view.'
 };
 
 const tr = {
@@ -585,7 +604,26 @@ const tr = {
   'fav.drill': 'Konuşma · {pattern}',
   'review.say': 'İngilizcesini söyle, sonra cevabı göster.',
   'err.BAD_AUDIO': 'Ses alınamadı.',
-  'err.SPEECH_FAILED': 'Kaydın işlenemedi.'
+  'err.SPEECH_FAILED': 'Kaydın işlenemedi.',
+  'split.label': 'Bölme',
+  'split.button': 'Yapay zekâ ile kısa parçalara böl',
+  'split.buttonTitle': 'Videonun tüm metnini yapay zekâya gönderir; yapay zekâ onu seviyene uygun kısa, anlamlı parçalara böler ve çevirir. Sonuç kaydedilir; orijinal kartlar olduğu gibi kalır.',
+  'split.viewTitle': 'Hangi altyazı kartları gösterilsin: orijinaller mi, yapay zekânın kısa parçaları mı',
+  'split.original': 'Orijinal',
+  'split.ai': 'Yapay zekâ',
+  'split.again': 'Yeniden böl',
+  'split.againTitle': 'Bu videoyu yapay zekâya yeniden böldür (şimdiki bölmenin yerine geçer)',
+  'split.againStale': 'Yeniden böl (metin değişti)',
+  'split.staleTitle': 'Bu videonun metni bölündükten sonra değişti. Yapay zekâ parçalarını güncellemek için yeniden böl.',
+  'split.running': 'Bölünüyor… {done} / {total}',
+  'split.starting': 'Bölünüyor…',
+  'split.done': 'Bitti: {n} kısa parça. "Orijinal" ile istediğin an geri dönebilirsin.',
+  'split.confirmTitle': 'Yeniden bölünsün mü?',
+  'split.confirmAgain': 'Yapay zekâ bu videoyu yeniden böler ve şimdiki yapay zekâ bölmesinin yerine geçer. Orijinal kartlar olduğu gibi kalır.',
+  'err.AI_SPLIT_RUNNING': 'Bu video zaten bölünüyor.',
+  'err.NO_WORDS': 'Bu videonun kelime zamanları yok. Çalıştır: npm run regroup -- <id> --whisper',
+  'err.NO_AI_SPLIT': 'Bu video henüz yapay zekâyla bölünmedi.',
+  'err.BAD_MODE': 'Bilinmeyen görünüm.'
 };
 
 export const LOCALES = { en, tr };

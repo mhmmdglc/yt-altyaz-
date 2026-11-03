@@ -20,6 +20,17 @@ Each card holds one or a few **whole sentences**; a sentence is never split acro
 - **Sentence colors:** when a card contains several sentences, each English sentence and its translation have the same colour (amber, mint, lilac). Switch it off for plain text.
 - Click a card to jump to it. The search box finds text in the English subtitles and in the translations.
 
+## Split into short parts with AI
+
+Some talks come out of Whisper as long, run-on cards (a speaker who chains clauses, or quotes in another language). With an AI key (see [AI.md](AI.md)), the video card's toolbar has a **Split** group:
+
+- **Split into short parts with AI** sends the whole transcript of the video to the AI, which cuts it into short, meaningful parts (one idea each, sized for your level: about A2 ≤ 8 words, B1 5–14, B2 ≤ 18, C1 ≤ 24) and translates every part into your language with the surrounding talk as context. A bar shows the progress (*Splitting… 4 / 12*); a 10-minute video takes about half a minute.
+- The English words and their timing stay exactly as transcribed: the AI only chooses where to cut. Notes such as *(speaking in foreign language)*, *[Music]* or *(Applause)* are left out; their time is a gap between two parts.
+- The result is saved in the video's folder (`ai-split.json`), so opening the video again costs nothing.
+- **Original | AI split** switches between your original cards (with the local translation) and the AI's parts at any time; the choice is remembered per video. Selections and loops are cleared when you switch.
+- **Split again** asks the AI again and replaces the saved split (after a confirmation). It says *(transcript changed)* when the video was transcribed again after it was split (`npm run regroup -- <id> --whisper`).
+- Favorites keep their own text, translation and time, so a sentence saved in one view is still marked (★) in the other view and on the Favorites page. 🎯 Study works from either view.
+
 ## Click a word
 
 Click any English word and its meaning in your language appears under it. Without a Gemini key the word is translated on its own by the local model, so for words with several meanings it shows one of them; contractions are expanded first (`don't` → `do not`). If you turn on *Settings → Also use Gemini for word meanings* (needs a Gemini key, off by default), the meaning fits the sentence and you also see the dictionary form, the part of speech and sometimes a short usage note. Click elsewhere or press `Esc` to close it.
@@ -87,8 +98,6 @@ On the Study page, open the **✨ Vary** tab. The sentence's pattern (for exampl
 
 See [AI.md](AI.md) for the key, privacy and cost.
 
-## Text-only mode
-
 ## Subtitles on the video, or only the video
 
 Under the video, **No subtitles / English / Translation / Both** (or `C`) draws the sentence being spoken on the picture, with its translation; for a card with several sentences it follows the sentence that is being said. **Hide list** (or `P`) in the list card hides the subtitle list, so you see only the video, large; **Show list** in the video toolbar brings it back. The ⛶ button in the corner of the video goes fullscreen *with* the subtitles (the browser's own fullscreen button is removed because it would drop them). Both settings are remembered.
@@ -129,4 +138,4 @@ Open **⚙ Settings → Translate subtitles into**. Videos translated into anoth
 
 ## Where is my data?
 
-In the `data/` folder of the project (one folder per video: the video, `project.json` with the cards and translations, and `words.json` with word timings). Back it up by copying the folder; moving it to another computer works too. See [CONFIGURATION.md](CONFIGURATION.md).
+In the `data/` folder of the project (one folder per video: the video, `project.json` with the cards and translations, `words.json` with word timings, and `ai-split.json` when the video was split with AI). Back it up by copying the folder; moving it to another computer works too. See [CONFIGURATION.md](CONFIGURATION.md).

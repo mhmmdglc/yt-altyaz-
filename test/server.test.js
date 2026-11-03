@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import http from 'node:http';
 import net from 'node:net';
 import { spawn } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync, existsSync, rmSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, writeFileSync, readFileSync, existsSync, rmSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,9 +18,11 @@ const fakeGemini = http.createServer((req, res) => {
   req.on('data', (d) => (body += d));
   req.on('end', () => {
     geminiCalls.push({ url: req.url, key: req.headers['x-goog-api-key'], body: JSON.parse(body || '{}') });
-    const { status, obj } = geminiReply(geminiCalls.at(-1));
-    res.writeHead(status, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify(status === 200 ? { candidates: [{ content: { parts: [{ text: JSON.stringify(obj) }] } }] } : obj));
+    const { status, obj, delay = 0 } = geminiReply(geminiCalls.at(-1));
+    setTimeout(() => {
+      res.writeHead(status, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify(status === 200 ? { candidates: [{ content: { parts: [{ text: JSON.stringify(obj) }] } }] } : obj));
+    }, delay);
   });
 });
 await new Promise((r) => fakeGemini.listen(0, '127.0.0.1', r));
@@ -75,8 +77,8 @@ test('path traversal through :id is rejected and nothing outside data/ is touche
   mkdirSync(decoy, { recursive: true });
   writeFileSync(path.join(decoy, 'keep.txt'), 'x');
   for (const evil of ['..%2Fdecoy', '..', '%2e%2e%2fdecoy', 'a'.repeat(100), '..%5Cdecoy']) {
-    for (const [method, suffix] of [['DELETE', ''], ['GET', ''], ['GET', '/video'], ['POST', '/translate'], ['GET', '/translate']]) {
-      const r = await request(server.port, method, `/api/project/${evil}${suffix}`, method === 'POST' ? { body: {} } : {});
+    for (const [method, suffix] of [['DELETE', ''], ['GET', ''], ['GET', '/video'], ['POST', '/translate'], ['GET', '/translate'], ['POST', '/ai-split'], ['GET', '/ai-split'], ['DELETE', '/ai-split'], ['PUT', '/split']]) {
+      const r = await request(server.port, method, `/api/project/${evil}${suffix}`, ['POST', 'PUT'].includes(method) ? { body: { mode: 'ai' } } : {});
       assert.ok([400, 404].includes(r.status), `${method} ${evil}${suffix} → ${r.status}`);
     }
   }
@@ -281,4 +283,154 @@ test('drill endpoint caches its ladder and favorites accept speaking sentences',
   assert.equal(fav.json.kind, 'drill');
   const again = await request(srv.port, 'POST', '/api/favorites', { body: { kind: 'drill', text: "I'm not going.", tr: 'Gitmiyorum.' } });
   assert.equal(again.json.id, fav.json.id);
+});
+
+/* ---------- AI split ---------- */
+
+const { buildCards } = await import('../segmenter.js');
+
+// A small talk with a non-speech annotation; words 0.4 s apart with pauses after the sentences
+function writeTalk(dataDir, id) {
+  const text = 'At this point Musa (speaking in foreign language) He actually, this is what the first command was that Allah gave Musa. ' +
+    'He said, "Yeah Allah, before I do it, I need some help." And so now we are learning that when Allah tells us to do something, it is hard.';
+  let t = 0;
+  const silences = [];
+  const words = text.split(' ').map((w) => {
+    const word = { w, s: +t.toFixed(2), e: +(t + 0.35).toFixed(2) };
+    t += 0.4;
+    if (/[.?!"]$/.test(w)) { silences.push({ a: +(word.e + 0.02).toFixed(2), b: +(word.e + 0.8).toFixed(2) }); t += 0.8; }
+    return word;
+  });
+  const segments = buildCards(words, silences).map((c, k) => ({ ...c, tr: `yerel ${k}` }));
+  mkdirSync(path.join(dataDir, id), { recursive: true });
+  writeFileSync(path.join(dataDir, id, 'words.json'), JSON.stringify({ words, silences }));
+  writeFileSync(path.join(dataDir, id, 'project.json'), JSON.stringify({ id, title: 'Talk', url: 'https://example.com', createdAt: '2026-01-01T00:00:00Z', trLang: 'tr', segments }, null, 2));
+  return { words, segments };
+}
+
+// The fake AI splits the transcript at ‖ and then every 5 words
+const splitReply = (delay = 0) => (call) => {
+  const prompt = call.body.contents[0].parts[0].text;
+  const text = /TRANSCRIPT TO SPLIT:\n(.*)/.exec(prompt)[1];
+  const pieces = [];
+  for (const run of text.split(' ‖ ')) {
+    const ws = run.split(' ');
+    for (let i = 0; i < ws.length; i += 5) pieces.push({ en: ws.slice(i, i + 5).join(' '), tr: `parça: ${ws.slice(i, i + 5).join(' ')}` });
+  }
+  return { status: 200, obj: { pieces }, delay };
+};
+
+async function waitSplit(port, id) {
+  for (let i = 0; i < 100; i++) {
+    const st = await request(port, 'GET', `/api/project/${id}/ai-split`);
+    if (st.json.status !== 'running') return st.json;
+    await new Promise((r) => setTimeout(r, 50));
+  }
+  throw new Error('the split did not finish');
+}
+
+test('AI split: needs a key, runs in the background, is saved, and the view can be switched', async () => {
+  const srv = await startServer();
+  const { words, segments } = writeTalk(srv.dataDir, ID);
+  const projectFile = path.join(srv.dataDir, ID, 'project.json');
+  await request(srv.port, 'PUT', '/api/settings', { body: { targetLang: 'tr' } });
+  const noKey = await request(srv.port, 'POST', `/api/project/${ID}/ai-split`);
+  assert.equal(noKey.status, 409);
+  assert.equal(noKey.json.code, 'NO_AI_KEY');
+  assert.equal((await request(srv.port, 'POST', '/api/project/99999999-0000-0000-0000-000000000000/ai-split')).status, 404);
+
+  await request(srv.port, 'PUT', '/api/settings', { body: { geminiApiKey: KEY } });
+  geminiCalls.length = 0;
+  geminiReply = splitReply(150);
+  const start = await request(srv.port, 'POST', `/api/project/${ID}/ai-split`);
+  assert.equal(start.json.status, 'running');
+  const busy = await request(srv.port, 'POST', `/api/project/${ID}/ai-split`);
+  assert.equal(busy.status, 409, 'one split at a time per video');
+  assert.equal(busy.json.code, 'AI_SPLIT_RUNNING');
+  const done = await waitSplit(srv.port, ID);
+  assert.equal(done.status, 'done');
+  assert.equal(done.done, done.total);
+  assert.ok(!geminiCalls.some((c) => c.body.contents[0].parts[0].text.split('TRANSCRIPT TO SPLIT:')[1].includes('speaking in foreign')));
+  assert.equal(geminiCalls[0].body.generationConfig.temperature, 0.2);
+
+  const saved = JSON.parse(readFileSync(path.join(srv.dataDir, ID, 'ai-split.json'), 'utf8'));
+  assert.equal(saved.lang, 'tr');
+  assert.equal(saved.level, 'B1');
+  assert.equal(saved.provider, 'gemini');
+  assert.match(saved.wordsHash, /^[0-9a-f]{16}$/);
+  assert.deepEqual(JSON.parse(readFileSync(projectFile, 'utf8')).segments, segments, 'the original cards are untouched');
+
+  // The finished split is shown; the original cards are one switch away
+  let p = (await request(srv.port, 'GET', `/api/project/${ID}`)).json;
+  assert.equal(p.split, 'ai');
+  assert.equal(p.hasAiSplit, true);
+  assert.equal(p.aiSplitStale, false);
+  assert.deepEqual(p.segments, saved.cards);
+  assert.ok(p.segments.every((c) => c.tr.startsWith('parça: ') && !c.text.includes('speaking')));
+  assert.equal(p.segments.map((c) => c.text).join(' ').split(' ').length, words.length - 4, 'every spoken word, the annotation dropped');
+  for (let k = 1; k < p.segments.length; k++) assert.ok(p.segments[k].start >= p.segments[k - 1].end);
+
+  assert.equal((await request(srv.port, 'PUT', `/api/project/${ID}/split`, { body: { mode: 'sideways' } })).status, 400);
+  assert.equal((await request(srv.port, 'PUT', `/api/project/${ID}/split`, { body: { mode: 'original' } })).json.split, 'original');
+  p = (await request(srv.port, 'GET', `/api/project/${ID}`)).json;
+  assert.equal(p.split, 'original');
+  assert.deepEqual(p.segments, segments);
+  assert.equal(p.hasAiSplit, true);
+  assert.deepEqual((await request(srv.port, 'GET', `/api/project/${ID}?view=ai`)).json.segments, saved.cards, 'one view on request');
+  assert.equal((await request(srv.port, 'GET', `/api/project/${ID}`)).json.split, 'original', '…without changing the choice');
+  const listed = (await request(srv.port, 'GET', '/api/projects')).json.find((x) => x.id === ID);
+  assert.equal(listed.segmentCount, segments.length, 'the library counts the original cards');
+
+  // A new transcript (npm run regroup -- <id> --whisper) makes the split stale, it is not deleted
+  const w = JSON.parse(readFileSync(path.join(srv.dataDir, ID, 'words.json'), 'utf8'));
+  w.words[0].e += 0.01;
+  writeFileSync(path.join(srv.dataDir, ID, 'words.json'), JSON.stringify(w));
+  p = (await request(srv.port, 'GET', `/api/project/${ID}?view=ai`)).json;
+  assert.equal(p.aiSplitStale, true);
+  assert.equal(p.split, 'ai');
+
+  // Errors of the AI surface with their code
+  geminiReply = () => ({ status: 429, obj: { error: { message: 'Resource has been exhausted' } } });
+  await request(srv.port, 'POST', `/api/project/${ID}/ai-split`);
+  const failed = await waitSplit(srv.port, ID);
+  assert.equal(failed.status, 'error');
+  assert.equal(failed.code, 'AI_QUOTA');
+  assert.ok(existsSync(path.join(srv.dataDir, ID, 'ai-split.json')), 'a failed run keeps the previous split');
+
+  assert.equal((await request(srv.port, 'DELETE', `/api/project/${ID}/ai-split`)).status, 200);
+  assert.ok(!existsSync(path.join(srv.dataDir, ID, 'ai-split.json')));
+  p = (await request(srv.port, 'GET', `/api/project/${ID}?view=ai`)).json;
+  assert.equal(p.split, 'original');
+  assert.equal(p.hasAiSplit, false);
+  assert.equal((await request(srv.port, 'PUT', `/api/project/${ID}/split`, { body: { mode: 'ai' } })).json.code, 'NO_AI_SPLIT');
+});
+
+test('favorites keep their sentence across the original and AI views', async () => {
+  const srv = await startServer();
+  writeTalk(srv.dataDir, ID);
+  await request(srv.port, 'PUT', '/api/settings', { body: { targetLang: 'tr', geminiApiKey: KEY } });
+  geminiReply = splitReply();
+  await request(srv.port, 'POST', `/api/project/${ID}/ai-split`);
+  assert.equal((await waitSplit(srv.port, ID)).status, 'done');
+  const ai = (await request(srv.port, 'GET', `/api/project/${ID}?view=ai`)).json.segments;
+  const orig = (await request(srv.port, 'GET', `/api/project/${ID}?view=original`)).json.segments;
+
+  const fromAi = await request(srv.port, 'POST', '/api/favorites', { body: { projectId: ID, cardIndex: 2, sentIndex: 0, view: 'ai' } });
+  assert.equal(fromAi.status, 200);
+  assert.deepEqual([fromAi.json.view, fromAi.json.text, fromAi.json.tr, fromAi.json.start, fromAi.json.end], ['ai', ai[2].text, ai[2].tr, ai[2].start, ai[2].end]);
+  const fromOrig = await request(srv.port, 'POST', '/api/favorites', { body: { projectId: ID, cardIndex: 0, sentIndex: 0 } });
+  assert.equal(fromOrig.json.view, 'original');
+  assert.equal(fromOrig.json.text, orig[0].sents[0]);
+  assert.notEqual(fromOrig.json.id, fromAi.json.id, 'same indexes, different views: different sentences');
+  const again = await request(srv.port, 'POST', '/api/favorites', { body: { projectId: ID, cardIndex: 2, sentIndex: 0, view: 'ai' } });
+  assert.equal(again.json.id, fromAi.json.id, 'no duplicates');
+  assert.equal((await request(srv.port, 'POST', '/api/favorites', { body: { projectId: ID, cardIndex: 999, sentIndex: 0, view: 'ai' } })).status, 404);
+
+  // Switching the view or redoing the split does not change what was saved
+  await request(srv.port, 'PUT', `/api/project/${ID}/split`, { body: { mode: 'original' } });
+  await request(srv.port, 'DELETE', `/api/project/${ID}/ai-split`);
+  const items = (await request(srv.port, 'GET', '/api/favorites')).json.items;
+  const kept = items.find((x) => x.id === fromAi.json.id);
+  assert.deepEqual([kept.text, kept.start, kept.end], [ai[2].text, ai[2].start, ai[2].end]);
+  assert.equal((await request(srv.port, 'POST', '/api/favorites', { body: { projectId: ID, cardIndex: 0, sentIndex: 0, view: 'ai' } })).status, 404, 'no AI split any more');
 });

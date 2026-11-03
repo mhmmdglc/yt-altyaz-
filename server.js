@@ -15,6 +15,7 @@ import { DEFAULT_DEEPSEEK_MODEL } from './deepseek.js';
 import { createFavorites, GRADES, isDue } from './favorites.js';
 import { createAICache } from './ai-cache.js';
 import { searchLibrary, sentencesOfCard } from './library.js';
+import { splitTranscript, AI_SPLIT_VERSION } from './ai-split.js';
 
 // Errors the UI knows how to translate carry a `code` (public/i18n.js → err.*)
 class AppError extends Error {
@@ -510,6 +511,112 @@ app.post('/api/ai/test', async (req, res) => {
   }
 });
 
+/* ---------- AI split: short pieces cut and translated by the AI (ai-split.js, docs/AI.md → "AI split") ---------- */
+
+const aiSplitFile = (id) => path.join(projectDir(id), 'ai-split.json');
+const wordsFile = (id) => path.join(projectDir(id), 'words.json');
+
+async function readAiSplit(id) {
+  try {
+    const s = JSON.parse(await readFile(aiSplitFile(id), 'utf8'));
+    return Array.isArray(s.cards) && s.cards.length ? s : null;
+  } catch { return null; }
+}
+
+// Fingerprint of the transcript the split was made from: after `npm run regroup -- <id> --whisper` the split is stale
+async function wordsHash(id) {
+  try { return crypto.createHash('sha256').update(await readFile(wordsFile(id))).digest('hex').slice(0, 16); } catch { return null; }
+}
+
+// Which cards a video shows: project.json → split ('original' | 'ai'), written under the project lock
+const setSplitView = (id, mode) => withLock(id, async () => {
+  const p = await loadProject(id);
+  if (mode === 'ai') p.split = 'ai'; else delete p.split;
+  await writeFile(projectFile(id), JSON.stringify(p, null, 2));
+});
+
+// projectId -> { status: 'running'|'done'|'error', done, total, error, code }
+const aiSplits = new Map();
+
+async function startAiSplit(id) {
+  if (aiSplits.get(id)?.status === 'running') throw new AppError('AI_SPLIT_RUNNING', 'This video is already being split.', 409);
+  let project;
+  try { project = await loadProject(id); } catch { throw new AppError('NOT_FOUND', 'Project not found', 404); }
+  let data;
+  try { data = JSON.parse(await readFile(wordsFile(id), 'utf8')); } catch {
+    throw new AppError('NO_WORDS', 'This video has no word timestamps (words.json). Run: npm run regroup -- <id> --whisper', 409);
+  }
+  const lang = await targetLang();
+  const ai = await aiConfig();
+  if (!ai.any) throw new gemini.AIError('NO_AI_KEY', 'No AI API key is configured.', 409);
+  const level = levelOf(await readSettings());
+  const hash = await wordsHash(id);
+
+  const state = { status: 'running', done: 0, total: 0 };
+  aiSplits.set(id, state);
+  const r = routerFor(ai);
+  const providers = new Set();
+  const generate = async (args) => { const out = await r.generate(args); providers.add(r.used.provider); return out; };
+  (async () => {
+    const { cards, stats } = await splitTranscript({
+      words: data.words, silences: data.silences || [], cards: project.segments, generate, lang, level,
+      originalTr: (project.trLang || null) === lang,
+      onProgress: (done, total) => { state.done = done; state.total = total; }
+    });
+    const provider = providers.has('gemini') && providers.has('deepseek') ? 'gemini+deepseek' : [...providers][0] || null;
+    const model = provider === 'deepseek' ? ai.deepseek.model : provider === 'gemini' ? ai.model : `${ai.model} + ${ai.deepseek.model}`;
+    const file = { version: AI_SPLIT_VERSION, createdAt: new Date().toISOString(), provider, model, level, lang, wordsHash: hash, stats, cards };
+    await writeFile(aiSplitFile(id), JSON.stringify(file, null, 1));
+    await setSplitView(id, 'ai'); // the user asked for it: show it
+    state.status = 'done';
+    state.stats = stats;
+  })().catch((e) => {
+    state.status = 'error';
+    state.error = e.message;
+    state.code = e.code || 'INTERNAL';
+  });
+  return state;
+}
+
+app.get('/api/project/:id/ai-split', (req, res) => {
+  res.json(aiSplits.get(req.params.id) || { status: 'idle' });
+});
+
+app.post('/api/project/:id/ai-split', async (req, res) => {
+  try {
+    res.json(await startAiSplit(req.params.id));
+  } catch (e) {
+    sendError(res, e);
+  }
+});
+
+app.delete('/api/project/:id/ai-split', async (req, res) => {
+  if (aiSplits.get(req.params.id)?.status === 'running') return res.status(409).json({ error: 'This video is being split.', code: 'AI_SPLIT_RUNNING' });
+  try {
+    await loadProject(req.params.id);
+  } catch {
+    return res.status(404).json({ error: 'Project not found', code: 'NOT_FOUND' });
+  }
+  await rm(aiSplitFile(req.params.id), { force: true });
+  await setSplitView(req.params.id, 'original');
+  aiSplits.delete(req.params.id);
+  res.json({ ok: true });
+});
+
+// PUT /api/project/:id/split { mode: 'original' | 'ai' }: which cards the video shows (remembered per video)
+app.put('/api/project/:id/split', async (req, res) => {
+  const mode = req.body?.mode;
+  if (!['original', 'ai'].includes(mode)) return res.status(400).json({ error: 'Unknown view', code: 'BAD_MODE' });
+  try {
+    await loadProject(req.params.id);
+  } catch {
+    return res.status(404).json({ error: 'Project not found', code: 'NOT_FOUND' });
+  }
+  if (mode === 'ai' && !(await readAiSplit(req.params.id))) return res.status(409).json({ error: 'This video has no AI split yet.', code: 'NO_AI_SPLIT' });
+  await setSplitView(req.params.id, mode);
+  res.json({ split: mode });
+});
+
 /* ---------- Favorites & review ---------- */
 
 const favorites = createFavorites(DATA_DIR);
@@ -533,13 +640,18 @@ app.post('/api/favorites', async (req, res) => {
       return res.json(item);
     }
     if (!isValidId(b.projectId) || !Number.isInteger(b.cardIndex) || !Number.isInteger(b.sentIndex)) return res.status(400).json({ error: 'Invalid sentence reference', code: 'BAD_TEXT' });
+    // view: the cards the index refers to ('original' by default, 'ai' for the AI split). The favorite keeps its own text,
+    // translation and times, so it stays right whichever view is shown later (and after the AI split is redone).
+    const view = b.view === 'ai' ? 'ai' : 'original';
     const project = await loadProject(b.projectId);
-    const card = project.segments[b.cardIndex];
+    const split = view === 'ai' ? await readAiSplit(project.id) : null;
+    if (view === 'ai' && !split) return res.status(404).json({ error: 'This video has no AI split', code: 'NOT_FOUND' });
+    const card = (split ? split.cards : project.segments)[b.cardIndex];
     const sentence = card && sentencesOfCard(card)[b.sentIndex];
     if (!sentence) return res.status(404).json({ error: 'Sentence not found', code: 'NOT_FOUND' });
     const item = await favorites.add({
-      kind: 'video', projectId: project.id, title: project.title, cardIndex: b.cardIndex, sentIndex: b.sentIndex,
-      text: sentence.text, tr: sentence.tr, lang: project.trLang || null, start: sentence.start, end: sentence.end
+      kind: 'video', projectId: project.id, title: project.title, view, cardIndex: b.cardIndex, sentIndex: b.sentIndex,
+      text: sentence.text, tr: sentence.tr, lang: (split ? split.lang : project.trLang) || null, start: sentence.start, end: sentence.end
     });
     res.json(item);
   } catch (e) {
@@ -599,17 +711,31 @@ app.get('/api/projects', async (_req, res) => {
   res.json(projects);
 });
 
+// The cards of the active view ('original' or 'ai') as `segments`; ?view=original|ai asks for one view without changing the choice
 app.get('/api/project/:id', async (req, res) => {
+  let p;
   try {
-    res.json(await loadProject(req.params.id));
+    p = await loadProject(req.params.id);
   } catch {
-    res.status(404).json({ error: 'Project not found', code: 'NOT_FOUND' });
+    return res.status(404).json({ error: 'Project not found', code: 'NOT_FOUND' });
   }
+  const split = await readAiSplit(req.params.id);
+  const asked = ['original', 'ai'].includes(req.query.view) ? req.query.view : p.split;
+  const view = asked === 'ai' && split ? 'ai' : 'original';
+  res.json({
+    ...p,
+    segments: view === 'ai' ? split.cards : p.segments,
+    split: view,
+    hasAiSplit: !!split,
+    aiSplitStale: !!split && split.wordsHash !== (await wordsHash(req.params.id)),
+    aiSplit: split ? { createdAt: split.createdAt, provider: split.provider, model: split.model, level: split.level, lang: split.lang, cards: split.cards.length } : null
+  });
 });
 
 app.delete('/api/project/:id', async (req, res) => {
   try {
     translations.delete(req.params.id);
+    aiSplits.delete(req.params.id);
     await rm(projectDir(req.params.id), { recursive: true, force: true });
     res.json({ ok: true });
   } catch {

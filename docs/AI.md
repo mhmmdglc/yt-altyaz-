@@ -55,6 +55,7 @@ Choose your English level (A2, B1, B2, C1; default B1) on the Study page (next t
 |---|---|---|
 | ✨ Vary | the sentence, the sentence before it (for context), your translation language and level, and the examples already shown (when you ask for more) | the video, the audio, other subtitles, your library, your favorites |
 | 🎯 Study | the sentence, the sentence before it, your translation language and level | your voice (transcribed locally), the video, everything else |
+| ✂ Split into short parts with AI | the **whole transcript** of that video (in batches of about 200 words, each with about 40 words before and after as context), your translation language and level | the video, the audio, word timings, other videos, your favorites |
 | Click a word (only with *Gemini for word meanings* on) | the word, the sentence it is in, your translation language and level | everything else |
 
 Real examples from your library are found **on your computer**: Gemini only suggests a few search phrases (such as "good at"), the search runs locally.
@@ -72,6 +73,19 @@ Every answer is **cached** in `data/ai-cache.json`, so opening the same sentence
 **Grammar notes.** The same answer has `notes`: 0 to 3 items `{ title, explanation, example: { en, tr } }` for structures, idioms, phrasal verbs or collocations in the sentence that are above your level; for everyday sentences it is empty and nothing is shown.
 
 The default model (`gemini-3.5-flash-lite`) was tested on real sentences: with the current prompt (English first, then its translation) the ladders were correct and consistent and arrived in about 3 seconds. `gemini-3.8-flash` wrote slightly richer ladders but took about 17 seconds and quickly hit the free-tier limit.
+
+**AI split.** A video is sent in batches of about 200 words (≈ 8 requests per 10 minutes of speech, two at a time). One batch is about 1,100 input and 1,000 output tokens, so a 10-minute video is roughly 9,000 input and 8,000 output tokens: about **$0.02–0.03** on Gemini's paid tier at the prices above (similar on DeepSeek), and 8 requests of the free tier's rate limit. A 31-minute talk took 25 requests and about a minute. The result is saved in `data/<id>/ai-split.json` and reused until you press **Split again**.
+
+## AI split
+
+*Split into short parts with AI* (see [USAGE.md](USAGE.md#split-into-short-parts-with-ai)) is in `ai-split.js`:
+
+1. Non-speech notes (`(speaking in foreign language)`, `[Music]`, `(Applause)`, `♪` …) are found in `words.json` and left out; bracketed speech such as `(SAW)` stays. They, and long pauses after punctuation (≥ 1.5 s, or ≥ 3 s anywhere), are shown to the AI as `‖`: a part always ends there.
+2. The transcript is cut into batches of about 200 words (at most 300) at original card boundaries. Each request asks for `{ pieces: [{ en, tr }] }` at temperature 0.2: `en` must copy the batch word for word, `tr` is the translation of that part in context.
+3. The answer is checked: the parts, joined, must give back the batch (case, quote style and quotation marks around a word aside). A failing batch is asked again once with the difference spelled out; if it still fails, the parts are aligned with the transcript word by word (longest common subsequence) and accepted when ≥ 98 % of the words line up; otherwise the batch keeps its original cards (with their local translation). A part that runs over `‖` is cut there.
+4. The card text is always rebuilt from the transcript words, and the times come from the word timestamps snapped to the silences with the same padding as normal cards (`cardsFromSentences` in `segmenter.js`, one part per card), so no word is lost, reordered or overlapping.
+
+The file `data/<id>/ai-split.json` is `{ version, createdAt, provider, model, level, lang, wordsHash, stats, cards }`; `cards` have the shape of normal cards. `wordsHash` detects a new transcript (the split is then marked stale, not deleted). `project.json` → `split: "ai"` remembers the view. The original cards, their local translation, the library search used by Vary and `npm run regroup` keep working on the original cards only.
 
 ## Model
 
@@ -94,4 +108,4 @@ Gemini writes good, natural examples, but explanations can occasionally be wrong
 
 ## For developers
 
-`gemini.js` contains the prompts, the response schemas and the Gemini client; `deepseek.js` the DeepSeek client (it turns the schema into an example the prompt shows); `ai.js` the router that tries Gemini, falls back to DeepSeek and pauses Gemini after a quota error; `ai-cache.js` the cache. `GEMINI_API_BASE` points the app at another endpoint (the tests use a local fake server). The prompts are in English and ask for the explanation and translations in the user's language.
+`gemini.js` contains the prompts, the response schemas and the Gemini client; `deepseek.js` the DeepSeek client (it turns the schema into an example the prompt shows); `ai.js` the router that tries Gemini, falls back to DeepSeek and pauses Gemini after a quota error; `ai-cache.js` the cache; `ai-split.js` the AI split (prompt, schema, checks, alignment). `GEMINI_API_BASE` points the app at another endpoint (the tests use a local fake server). The prompts are in English and ask for the explanation and translations in the user's language.

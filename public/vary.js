@@ -86,10 +86,10 @@ function libraryBlock(hits) {
       playBtn.textContent = '⏹';
       playClip({ key, projectId: h.projectId, start: h.start, end: h.end, onEnd: () => { playBtn.textContent = '▶'; } });
     } });
-    const saved = !!findVideoFav(h.projectId, h.cardIndex, h.sentIndex);
+    const saved = !!findVideoFav(h.projectId, h); // library hits are original cards
     const starBtn = el('button.icon-btn', { text: saved ? '★' : '☆', title: t('card.fav'), 'aria-label': t('card.fav'), disabled: saved, onclick: async () => {
       try {
-        await addVideoFav(h.projectId, h.cardIndex, h.sentIndex);
+        await addVideoFav(h.projectId, h.cardIndex, h.sentIndex, 'original');
         starBtn.textContent = '★';
         starBtn.disabled = true;
         toast(t('fav.added'));

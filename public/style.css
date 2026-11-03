@@ -405,6 +405,17 @@ body.text-mode #panelBtn { display: none; }
 }
 .seg.ready .seg-pill { transition: transform 0.2s var(--ease), width 0.2s var(--ease), opacity 0.15s; }
 
+/* AI split: one button, then "Original | AI" + "Split again"; a thin bar while the AI works */
+.split-ctl { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; min-width: 0; }
+.split-run {
+  display: flex; flex-direction: column; justify-content: center; gap: 5px;
+  height: var(--ctl-h); min-width: 150px;
+  font-size: 12.5px; color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.split-bar { height: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.split-bar > div { height: 100%; width: 0; background: var(--grad); transition: width 0.4s ease; }
+#splitAgainBtn.warn { color: #fbbf24; }
+
 /* Keyboard focus: one ring for everything clickable */
 .btn:focus-visible, .seg button:focus-visible, .kbd-help summary:focus-visible, .input:focus-visible, .card-btn:focus-visible,
 .sel-dot:focus-visible, .modal-x:focus-visible, .fs-btn:focus-visible {
@@ -1094,12 +1105,17 @@ body.subs-hidden:not(.text-mode) .workspace { grid-template-columns: minmax(0, 1
   .tb-group > .seg button { flex: 1; padding: 0 4px; }
   .tb-actions { margin-left: 0; justify-content: stretch; }
   .tb-actions .btn { flex: 1; padding: 0 8px; }
+  .split-ctl > .seg { display: flex; flex: 1 1 auto; }
+  .split-ctl > .seg button { flex: 1; padding: 0 4px; }
+  .split-ctl > .btn { flex: 1 1 auto; }
+  .split-run { flex: 1 1 100%; }
   .video-frame { margin: 10px 10px 0; }
   .subs-options { padding: 10px 12px 8px; gap: 8px 16px; }
   .subs-head, .video-meta, .kbd-help { padding-left: 12px; padding-right: 12px; }
   .subs-tools { padding: 0 12px 10px; }
 }
 @media (prefers-reduced-motion: reduce) {
+  .split-bar > div { transition: none; }
   .seg.ready .seg-pill, .kbd-help summary .ico:last-child, .switch-track, .switch-track::after, .seg button { transition: none; }
 }
 

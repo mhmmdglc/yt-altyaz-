@@ -15,12 +15,24 @@ export async function loadFavorites() {
   emit();
 }
 
-export const findVideoFav = (projectId, cardIndex, sentIndex) =>
-  items.find((x) => x.kind === 'video' && x.projectId === projectId && x.cardIndex === cardIndex && x.sentIndex === sentIndex) || null;
+// The saved favorite for a sentence of a video ({ text, start, end }). Card indexes differ between the original cards and the
+// AI split, so a sentence is matched by time: the same text, or the shorter of the two lies mostly inside the other (a long
+// original sentence saved in one view lights up its short AI pieces in the other, and the other way round).
+export function findVideoFav(projectId, sent) {
+  const mine = items.filter((x) => x.kind === 'video' && x.projectId === projectId);
+  const same = mine.find((x) => x.text === sent.text && Math.abs((x.start ?? 0) - sent.start) < 0.5);
+  if (same) return same;
+  return mine.find((x) => {
+    if (!(x.end > x.start) || !(sent.end > sent.start)) return false;
+    const overlap = Math.min(x.end, sent.end) - Math.max(x.start, sent.start);
+    return overlap > 0.5 * Math.min(x.end - x.start, sent.end - sent.start);
+  }) || null;
+}
 export const findExampleFav = (text) => items.find((x) => x.kind === 'example' && x.text === text) || null;
 
-export async function addVideoFav(projectId, cardIndex, sentIndex) {
-  const item = await api('/api/favorites', { method: 'POST', body: { projectId, cardIndex, sentIndex } });
+// view: which cards cardIndex refers to ('original' or 'ai'); the server stores the sentence's own text, translation and times
+export async function addVideoFav(projectId, cardIndex, sentIndex, view = 'original') {
+  const item = await api('/api/favorites', { method: 'POST', body: { projectId, cardIndex, sentIndex, view } });
   await loadFavorites();
   return item;
 }

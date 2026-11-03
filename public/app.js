@@ -39,6 +39,13 @@ const els = {
   capEn: $('#capEn'),
   capTr: $('#capTr'),
   capSeg: $('#capSeg'),
+  splitBtn: $('#splitBtn'),
+  splitSeg: $('#splitSeg'),
+  splitAgainBtn: $('#splitAgainBtn'),
+  splitAgainText: $('#splitAgainText'),
+  splitRun: $('#splitRun'),
+  splitRunText: $('#splitRunText'),
+  splitBarFill: $('#splitBarFill'),
   panelBtn: $('#panelBtn'),
   panelShowBtn: $('#panelShowBtn'),
   selBar: $('#selBar'),
@@ -118,6 +125,8 @@ const CAP_MODES = ['off', 'en', 'tr', 'both'];
 let capMode = CAP_MODES.includes(store('capMode')) ? store('capMode') : 'off'; // subtitles drawn on the video
 let subsHidden = store('subsHidden') === 'true'; // the subtitle list is hidden: only the video
 let trPollId = 0;
+let splitPollId = 0;
+let splitState = { status: 'idle' }; // the AI split job of the open video
 let isAutoMode = store('autoMode') !== 'false';
 let playUntil = null;
 let loop = null; // { from, to }: the cards being repeated (one card, or a selected range)
@@ -295,7 +304,10 @@ async function openProject(id, at = null) {
   showView('workspace');
   markActive(p.id);
   renderList();
+  splitState = { status: 'idle' };
+  renderSplitUI();
   checkTranslation();
+  checkAiSplit();
   els.subList.scrollTop = 0;
 }
 
@@ -307,7 +319,12 @@ function updateStats() {
 /* ---------- Delete ---------- */
 let confirmResolve = null;
 
-function confirmDialog(text) {
+// A yes / no question in the confirm dialog (by default: the delete question)
+function confirmDialog(text, { title = t('confirm.title'), yes = t('confirm.yes'), danger = true } = {}) {
+  $('#confirmTitle').textContent = title;
+  els.confirmYes.textContent = yes;
+  els.confirmYes.classList.toggle('btn-danger-solid', danger);
+  els.confirmYes.classList.toggle('btn-primary', !danger);
   els.confirmText.textContent = text;
   els.confirm.classList.remove('hidden');
   els.confirmNo.focus();
@@ -593,7 +610,7 @@ function pickSentence(line, i, action) {
   const pop = el('div.sent-pick', { onclick: (e) => e.stopPropagation() }, [
     el('div.small.muted', { text: t('card.pick') }),
     ...sents.map((text, k) => el(`button.sent-pick-item.s.sc${k % SENT_COLORS}`, { onclick: () => { pop.remove(); runSentenceAction(line, i, k, action); } }, [
-      action === 'fav' ? (findVideoFav(current.id, i, k) ? '★ ' : '☆ ') : '🎯 ', text
+      action === 'fav' ? (findVideoFav(current.id, sentAt(i, k)) ? '★ ' : '☆ ') : '🎯 ', text
     ]))
   ]);
   line.appendChild(pop);
@@ -603,17 +620,23 @@ async function runSentenceAction(line, i, k, action) {
   const sents = sentencesOf(current.segments[i]);
   if (action === 'study') return openStudy(studySourceOf(i, k));
   try {
-    const existing = findVideoFav(current.id, i, k);
+    const existing = findVideoFav(current.id, sentAt(i, k));
     if (existing) {
       await removeFav(existing.id);
       toast(t('fav.removedToast'));
     } else {
-      await addVideoFav(current.id, i, k);
+      await addVideoFav(current.id, i, k, current.split === 'ai' ? 'ai' : 'original');
       toast(t('fav.added'));
     }
   } catch (err) {
     toast(`⚠️ ${err.message}`);
   }
+}
+
+// Text and times of sentence k of card i (for matching favorites, which are kept by time)
+function sentAt(i, k) {
+  const seg = current.segments[i];
+  return { text: sentencesOf(seg)[k], start: seg.sentTimes?.[k]?.[0] ?? seg.start, end: seg.sentTimes?.[k]?.[1] ?? seg.end };
 }
 
 // Everything Study needs about sentence k of card i of the open video
@@ -650,7 +673,7 @@ function updateFavMarks() {
   [...els.subList.children].forEach((line, i) => {
     let any = false;
     line.querySelectorAll('.text .sent').forEach((span) => {
-      const on = !!findVideoFav(current.id, i, Number(span.dataset.k));
+      const on = !!findVideoFav(current.id, sentAt(i, Number(span.dataset.k)));
       span.classList.toggle('fav', on);
       any ||= on;
     });
@@ -1014,8 +1037,8 @@ const languageMismatch = () => !!(current?.trLang && settings.targetLang && curr
 
 // Pulls the server's translations into the open list (adds new ones, removes cleared ones)
 async function refreshTranslations(id) {
-  const p = await fetch(`/api/project/${id}`).then((r) => r.json());
-  if (!current || current.id !== id) return;
+  const p = await fetch(`/api/project/${id}?view=original`).then((r) => r.json());
+  if (!current || current.id !== id || current.split === 'ai') return;
   current.trLang = p.trLang;
   const items = els.subList.children;
   p.segments.forEach((s, i) => {
@@ -1032,6 +1055,8 @@ async function checkTranslation() {
   if (!current) return;
   const id = current.id;
   const myPoll = ++trPollId;
+  // The AI split brings its own translations; the local translation (of the original cards) is only shown with them
+  if (current.split === 'ai') return setTrBar();
   let state = { status: 'idle' };
   try { state = await fetch(`/api/project/${id}/translate`).then((r) => r.json()); } catch { /* idle */ }
 
@@ -1078,6 +1103,100 @@ async function startTranslation() {
     els.trBarBtn.disabled = false;
   }
   checkTranslation();
+}
+
+
+/* ---------- AI split: short pieces cut and translated by the AI (docs/USAGE.md → "Split into short parts with AI") ---------- */
+function renderSplitUI() {
+  if (!current) return;
+  const has = !!current.hasAiSplit;
+  const running = splitState.status === 'running';
+  els.splitBtn.classList.toggle('hidden', has);
+  els.splitBtn.disabled = running;
+  els.splitSeg.classList.toggle('hidden', !has);
+  els.splitSeg.querySelectorAll('button').forEach((b) => b.classList.toggle('active', b.dataset.split === current.split));
+  els.splitAgainBtn.classList.toggle('hidden', !has);
+  els.splitAgainBtn.disabled = running;
+  els.splitAgainBtn.classList.toggle('warn', !!current.aiSplitStale);
+  els.splitAgainText.textContent = t(current.aiSplitStale ? 'split.againStale' : 'split.again');
+  els.splitAgainBtn.title = t(current.aiSplitStale ? 'split.staleTitle' : 'split.againTitle');
+  els.splitRun.classList.toggle('hidden', !running);
+  if (running) {
+    els.splitRunText.textContent = splitState.total ? t('split.running', { done: splitState.done, total: splitState.total }) : t('split.starting');
+    els.splitBarFill.style.width = `${Math.round((splitState.total ? splitState.done / splitState.total : 0) * 100)}%`;
+  }
+}
+
+// Loads the open video's cards again (after a view switch or a finished split), keeping the playback where it is
+async function reloadCards() {
+  const id = current.id;
+  const p = await api(`/api/project/${id}`);
+  if (!current || current.id !== id) return;
+  stopLoop();
+  selFrom = selTo = selAnchor = -1;
+  closePickers();
+  closeWordPop();
+  current = p;
+  activeIndex = -1;
+  capKey = '';
+  updateStats();
+  renderList();
+  updateSelectionUI();
+  if (els.subSearch.value.trim()) filterSubs();
+  else els.subCount.textContent = tn('subs.count', p.segments.length);
+  manualScrollAt = 0;
+  scrollToActive(true);
+  renderSplitUI();
+  checkTranslation();
+}
+
+async function setSplitView(mode) {
+  if (!current || current.split === mode || (mode === 'ai' && !current.hasAiSplit)) return;
+  try {
+    await api(`/api/project/${current.id}/split`, { method: 'PUT', body: { mode } });
+    await reloadCards();
+  } catch (err) {
+    toast(`⚠️ ${err.message}`);
+  }
+}
+
+async function startAiSplit() {
+  if (!current || splitState.status === 'running') return;
+  if (current.hasAiSplit && !(await confirmDialog(t('split.confirmAgain'), { title: t('split.confirmTitle'), yes: t('split.again'), danger: false }))) return;
+  try {
+    splitState = await api(`/api/project/${current.id}/ai-split`, { method: 'POST' });
+  } catch (err) {
+    toast(`⚠️ ${err.message}`, 4000);
+    return;
+  }
+  renderSplitUI();
+  checkAiSplit();
+}
+
+// Follows a running split of the open video (also one started before a page reload)
+async function checkAiSplit() {
+  if (!current) return;
+  const id = current.id;
+  const myPoll = ++splitPollId;
+  let state;
+  try { state = await api(`/api/project/${id}/ai-split`); } catch { return; }
+  let sawRunning = false;
+  while (state.status === 'running' && current?.id === id && myPoll === splitPollId) {
+    sawRunning = true;
+    splitState = state;
+    renderSplitUI();
+    await sleep(1000);
+    try { state = await api(`/api/project/${id}/ai-split`); } catch { break; }
+  }
+  if (!current || current.id !== id || myPoll !== splitPollId) return;
+  splitState = state;
+  if (sawRunning && state.status === 'done') {
+    await reloadCards().catch(() => {});
+    toast(t('split.done', { n: current.segments.length }), 3500);
+  } else if (sawRunning && state.status === 'error') {
+    toast(`⚠️ ${apiError(state)}`, 5000);
+  }
+  renderSplitUI();
 }
 
 /* ---------- Settings ---------- */
@@ -1555,6 +1674,9 @@ els.drawerBackdrop.addEventListener('click', closeDrawer);
 $('#drawerHome').addEventListener('click', closeDrawer);
 els.hideVideoBtn.addEventListener('click', toggleTextMode);
 els.capSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-cap]'); if (b) setCapMode(b.dataset.cap); });
+els.splitSeg.addEventListener('click', (e) => { const b = e.target.closest('button[data-split]'); if (b) setSplitView(b.dataset.split); });
+els.splitBtn.addEventListener('click', startAiSplit);
+els.splitAgainBtn.addEventListener('click', startAiSplit);
 els.panelBtn.addEventListener('click', togglePanel);
 els.panelShowBtn.addEventListener('click', togglePanel);
 els.selLoop.addEventListener('click', toggleSelectionLoop);

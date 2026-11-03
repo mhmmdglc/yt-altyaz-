@@ -184,16 +184,26 @@ function refineBoundary(prev, next, silences) {
 // Returns cards: { start, end, text, sents: [sentence, …], sentTimes: [[start, end], …] }
 export function buildCards(words, silences, opts = {}) {
   const cfg = { ...CARD, ...opts };
-  const sentences = wordsToSentences(words, silences, cfg);
+  return cardsFromSentences(wordsToSentences(words, silences, cfg), silences, cfg);
+}
+
+// Sentences ({ words: [{ w, s, e }], text }) → cards. Times are snapped to silences and padded; neighbouring cards never overlap.
+// opts.pack === false gives every sentence its own card (the AI split). A sentence may carry `prevWord` / `nextWord`: the word
+// spoken right before / after it when that is not the neighbouring sentence's (e.g. a dropped "(speaking in foreign language)").
+export function cardsFromSentences(sentences, silences = [], opts = {}) {
+  const cfg = { ...CARD, ...opts };
+  const pack = cfg.pack !== false;
+  sentences = sentences.filter((s) => s.words?.length).map((s) => ({ ...s }));
   if (!sentences.length) return [];
 
   // Sentence start/end times (snapped to silences)
   sentences.forEach((sent, i) => {
     const first = sent.words[0];
     const last = sent.words[sent.words.length - 1];
-    const prevLast = sentences[i - 1]?.words.at(-1) ?? null;
+    const prevLast = sent.prevWord !== undefined ? sent.prevWord : sentences[i - 1]?.words.at(-1) ?? null;
+    const nextFirst = sent.nextWord !== undefined ? sent.nextWord : sentences[i + 1]?.words[0] ?? null;
     sent.start = refineBoundary(prevLast, first, silences).startNext;
-    sent.end = refineBoundary(last, sentences[i + 1]?.words[0] ?? null, silences).endPrev;
+    sent.end = refineBoundary(last, nextFirst, silences).endPrev;
     if (sent.end <= sent.start) sent.end = Math.max(last.e, sent.start + 0.1);
   });
 
@@ -203,6 +213,7 @@ export function buildCards(words, silences, opts = {}) {
     const card = cards.at(-1);
     const chars = card ? card.sents.join(' ').length + 1 + sent.text.length : 0;
     const fits =
+      pack &&
       card &&
       card.sents.length < cfg.maxSentences &&
       chars <= cfg.maxChars &&

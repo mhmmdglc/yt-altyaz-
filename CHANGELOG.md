@@ -5,6 +5,7 @@ All notable changes to this project are documented here. The format follows [Kee
 ## [1.3.0] - 2026-10-22
 
 ### Added
+- **Split into short parts with AI** (video toolbar): the AI cuts the whole transcript into short, meaningful parts for your level and translates each in context; the English and its timing stay exact, notes like *(speaking in foreign language)* are dropped, the result is saved (`ai-split.json`), and **Original | AI split** switches views per video (favorites stay marked in both).
 - **Study ladders that fit the sentence**: the number of steps follows the length of the sentence and the level (up to 20 for a very long one) and a long sentence is built up chunk by chunk, each step adding only a few words, with the full sentence as the last step (before: 12 steps, then a jump from a short fragment to the whole sentence).
 - Study: **✓ I knew it / ✗ I didn't** (buttons or `1` / `2`) move on to the next step by themselves (one by one: next step; list: the next card scrolls into view); un-marking, a manual move, or a mark from the 🎤 check does not.
 - **Study and Vary follow your language and ignore foreign quotations**: the pattern name, labels, translations and notes are always in your translation language (the pattern used to come back in English), and a quotation in another language (for example a transliterated Arabic verse inside an English sentence) is no longer put into the ladder steps; steps that end on words like *and be* or *your* are dropped.
